@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>User Profile Settings | Premium SaaS</title>
+<!-- Google Fonts: Inter and Manrope for high-end typography -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'premium-gold': '#D4AF37',
+            'premium-gold-light': '#F1D279',
+            'premium-dark': '#0F1115',
+            'premium-gray': '#1C1F26',
+            'glass-border': 'rgba(255, 255, 255, 0.1)',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Manrope', 'sans-serif'],
+          },
+          backgroundImage: {
+            'gold-gradient': 'linear-gradient(135deg, #D4AF37 0%, #B8860B 100%)',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-glassmorphism">
+    /* Custom glassmorphism and premium effects */
+    .glass-card {
+      background: rgba(28, 31, 38, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+    .input-field {
+      background: rgba(15, 17, 21, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+    .input-field:focus {
+      border-color: #D4AF37;
+      box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+      outline: none;
+    }
+    .read-only-field {
+      background: rgba(15, 17, 21, 0.3);
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.05);
+      color: #9CA3AF;
+    }
+  </style>
+</head>
+<body class="bg-premium-dark text-gray-100 font-sans min-h-screen flex items-center justify-center p-4">
+<!-- BEGIN: Main Container -->
+<main class="w-full max-w-lg mx-auto" data-purpose="profile-settings-container">
+<!-- BEGIN: Header Section -->
+<section class="mb-8 text-center">
+<h1 class="font-display text-2xl font-extrabold tracking-tight text-white mb-1">Account Settings</h1>
+<p class="text-gray-400 text-sm">Manage your professional identity and preferences.</p>
+</section>
+<!-- END: Header Section -->
+<!-- BEGIN: Profile Card -->
+<div class="glass-card rounded-3xl p-8 space-y-8">
+<!-- BEGIN: Avatar Section -->
+<section class="flex flex-col items-center" data-purpose="user-avatar-upload">
+<div class="relative group">
+<!-- Circular Avatar with Gold Border -->
+<div class="w-28 h-28 rounded-full border-2 border-premium-gold p-1 shadow-2xl overflow-hidden">
+<img alt="User Avatar" class="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmMDwFmE5PcyT32e4heQl4qRf_kZqoxMhrl0N1B4ici5AQg9HpkKi-3m7cnu79lYJdvUQ731YkuRkkT8dL3916tegUzW_YDteFUkzKL82zJtMEiIvp9E88oc9gqqwSfkEnEcXsVYmknx__Ihg9YvoGhXetlGUgkjszqiikMMH_QUSu7pU1EaPbH2MfVnlS6_EDQZlVvK7r9zEpNf7qCNP29VrdO_v7W_3gl0n41_vU23t7DGPugwvOH293J09fcCGUIiLHz-hLoQUa"/>
+</div>
+<!-- Edit Overlay (Optional hint) -->
+<div class="absolute inset-0 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 bg-black/40 transition-opacity cursor-pointer">
+<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><path d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+<!-- Avatar Controls -->
+<div class="flex gap-3 mt-6">
+<button class="bg-gold-gradient hover:opacity-90 text-premium-dark font-bold text-xs uppercase tracking-wider py-2.5 px-6 rounded-full transition-all active:scale-95 shadow-lg">
+            Upload Photo
+          </button>
+<button class="border border-white/10 hover:bg-white/5 text-gray-300 font-semibold text-xs uppercase tracking-wider py-2.5 px-6 rounded-full transition-all active:scale-95">
+            Remove
+          </button>
+</div>
+</section>
+<!-- END: Avatar Section -->
+<div class="h-px bg-white/5 w-full"></div>
+<!-- BEGIN: Form Section -->
+<section data-purpose="general-info-form">
+<h2 class="font-display text-lg font-bold text-white mb-6 flex items-center gap-2">
+<span class="w-1.5 h-6 bg-premium-gold rounded-full"></span>
+          General Information
+        </h2>
+<form class="space-y-5">
+<!-- Name (Read-only) -->
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
+<input class="w-full px-4 py-3 rounded-xl input-field read-only-field text-sm" data-purpose="field-name" readonly="" type="text" value="Alexander Sterling"/>
+</div>
+<!-- Email (Read-only) -->
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-gray-500 uppercase tracking-widest ml-1">Email Address</label>
+<input class="w-full px-4 py-3 rounded-xl input-field read-only-field text-sm" data-purpose="field-email" readonly="" type="email" value="a.sterling@enterprise.com"/>
+</div>
+<!-- Phone (Editable) -->
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-gray-400 uppercase tracking-widest ml-1">Phone Number</label>
+<input class="w-full px-4 py-3 rounded-xl input-field text-sm text-white" data-purpose="field-phone" placeholder="+1 (555) 000-0000" type="tel"/>
+</div>
+<!-- Department (Editable Dropdown) -->
+<div class="space-y-1.5">
+<label class="text-xs font-semibold text-gray-400 uppercase tracking-widest ml-1">Department</label>
+<div class="relative">
+<select class="w-full px-4 py-3 rounded-xl input-field text-sm text-white appearance-none cursor-pointer" data-purpose="field-department">
+<option value="exec">Executive Management</option>
+<option selected="" value="design">Product Design</option>
+<option value="eng">Engineering</option>
+<option value="ops">Operations</option>
+</select>
+<!-- Custom Dropdown Arrow -->
+<div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+<svg class="w-4 h-4 text-premium-gold" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M19 9l-7 7-7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+</div>
+</div>
+<!-- BEGIN: Action Button -->
+<div class="pt-4">
+<button class="w-full bg-gold-gradient hover:shadow-[0_0_20px_rgba(212,175,55,0.3)] text-premium-dark font-display font-extrabold text-sm uppercase tracking-widest py-4 rounded-xl transition-all transform hover:-translate-y-0.5 active:scale-95" type="submit">
+              Save Changes
+            </button>
+</div>
+<!-- END: Action Button -->
+</form>
+</section>
+<!-- END: Form Section -->
+</div>
+<!-- END: Profile Card -->
+<!-- BEGIN: Footer Branding -->
+<footer class="mt-8 text-center text-gray-600 text-[10px] uppercase tracking-widest">
+      © 2024 Sterling Enterprise Systems • Secure Profile Management
+    </footer>
+<!-- END: Footer Branding -->
+</main>
+<!-- END: Main Container -->
+</body></html>

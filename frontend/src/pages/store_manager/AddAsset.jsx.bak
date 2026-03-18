@@ -1,0 +1,561 @@
+import { useState, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { assetsAPI } from '../../api';
+import toast from 'react-hot-toast';
+
+const CATEGORIES = ['Laptop', 'Tablet', 'Phone', 'Peripheral', 'ID Card', 'Book', 'Monitor', 'Keyboard', 'Mouse', 'Headset', 'Other'];
+
+const EMPTY_FORM = {
+    name: '', category: '', serialNumber: '', condition: 'new',
+    purchaseDate: '', purchasePrice: '', vendor: '', location: '', notes: '',
+    warranty: { provider: '', expiryDate: '', notes: '' },
+    images: [],
+};
+
+export default function AddAsset() {
+    const [assetType, setAssetType] = useState(null); // 'movable' or 'fixed'
+    const [showTypeModal, setShowTypeModal] = useState(true);
+    const [bulkMode, setBulkMode] = useState(false);
+    const [assets, setAssets] = useState([{ ...EMPTY_FORM, id: Date.now() }]);
+    const [loading, setLoading] = useState(false);
+    const [previewImages, setPreviewImages] = useState({});
+    const [lastAdded, setLastAdded] = useState(null);
+    const fileRefs = useRef({});
+
+    /* ── helpers ── */
+    const handleChange = (id, e) => {
+        setAssets(prev => prev.map(asset => 
+            asset.id === id ? { ...asset, [e.target.name]: e.target.value } : asset
+        ));
+    };
+    
+    const handleWarranty = (id, e) => {
+        setAssets(prev => prev.map(asset => 
+            asset.id === id ? { ...asset, warranty: { ...asset.warranty, [e.target.name]: e.target.value } } : asset
+        ));
+    };
+
+    const handleImages = (id, e) => {
+        const files = Array.from(e.target.files).slice(0, 5);
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const imgObj = { data: reader.result, name: file.name, uploadedAt: new Date().toISOString() };
+                setAssets(prev => prev.map(asset => 
+                    asset.id === id ? { ...asset, images: [...asset.images, imgObj].slice(0, 5) } : asset
+                ));
+                setPreviewImages(prev => ({
+                    ...prev,
+                    [id]: [...(prev[id] || []), reader.result].slice(0, 5)
+                }));
+            };
+            reader.readAsDataURL(file);
+        });
+        e.target.value = '';
+    };
+
+    const removeImage = (id, idx) => {
+        setAssets(prev => prev.map(asset => 
+            asset.id === id ? { ...asset, images: asset.images.filter((_, i) => i !== idx) } : asset
+        ));
+        setPreviewImages(prev => ({
+            ...prev,
+            [id]: (prev[id] || []).filter((_, i) => i !== idx)
+        }));
+    };
+
+    const addAssetRow = () => {
+        setAssets(prev => [...prev, { ...EMPTY_FORM, id: Date.now() }]);
+    };
+
+    const removeAssetRow = (id) => {
+        if (assets.length > 1) {
+            setAssets(prev => prev.filter(asset => asset.id !== id));
+            const newPreviews = { ...previewImages };
+            delete newPreviews[id];
+            setPreviewImages(newPreviews);
+        }
+    };
+
+    const clearAll = () => {
+        setAssets([{ ...EMPTY_FORM, id: Date.now() }]);
+        setPreviewImages({});
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        
+        // Validate all assets
+        const invalidAssets = assets.filter(asset => !asset.name || !asset.category || !asset.serialNumber);
+        if (invalidAssets.length > 0) {
+            toast.error(`Please fill required fields for ${invalidAssets.length} asset(s)`);
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const results = await Promise.all(
+                assets.map(asset => assetsAPI.create({
+                    ...asset,
+                    assetType // Include the selected asset type
+                }))
+            );
+            
+            toast.success(`${results.length} asset${results.length > 1 ? 's' : ''} registered successfully!`);
+            setLastAdded({ count: results.length, assets: results.map(r => r.data.data.asset) });
+            setAssets([{ ...EMPTY_FORM, id: Date.now() }]);
+            setPreviewImages({});
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to add assets');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div>
+            <div className="page-header">
+                <div className="page-header-left">
+                    <h1>Add New Asset</h1>
+                    <p>Register a new physical asset into the central inventory</p>
+                </div>
+                <Link to="/store-manager/inventory" className="btn btn-ghost">
+                    📦 View Inventory
+                </Link>
+            </div>
+
+            {/* ── Asset Type Selection Modal ── */}
+            {showTypeModal && (
+                <div className="modal-overlay" onClick={() => setShowTypeModal(false)}>
+                    <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
+                        <div className="modal-header" style={{ padding: '1.25rem 1.5rem' }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Select Asset Type</h3>
+                            <button className="modal-close" onClick={() => setShowTypeModal(false)}>✕</button>
+                        </div>
+                        <div className="modal-body" style={{ padding: '1.5rem' }}>
+                            <p style={{ marginBottom: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+                                Choose the type of asset you want to register
+                            </p>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {/* Movable Asset Card */}
+                                <button
+                                    onClick={() => handleTypeSelect('movable')}
+                                    className="card"
+                                    style={{
+                                        background: 'var(--surface)',
+                                        border: '2px solid var(--border)',
+                                        borderRadius: 'var(--radius)',
+                                        padding: '1rem 1.25rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s var(--ease)',
+                                        textAlign: 'left',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '1rem',
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.borderColor = 'var(--accent)';
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.borderColor = 'var(--border)';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = 'var(--shadow-xs)';
+                                    }}
+                                >
+                                    <div style={{
+                                        width: 44,
+                                        height: 44,
+                                        minWidth: 44,
+                                        background: 'linear-gradient(135deg, #6366f1, #818cf8)',
+                                        borderRadius: 'var(--radius-sm)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '1.5rem',
+                                        boxShadow: '0 2px 8px rgba(99, 102, 241, 0.25)',
+                                    }}>🎒</div>
+                                    <div>
+                                        <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text)', marginBottom: '0.25rem' }}>
+                                            Movable Asset
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                                            Portable items assigned to employees
+                                        </div>
+                                    </div>
+                                </button>
+
+                                {/* Fixed Asset Card */}
+                                <button
+                                    onClick={() => handleTypeSelect('fixed')}
+                                    className="card"
+                                    style={{
+                                        background: 'var(--surface)',
+                                        border: '2px solid var(--border)',
+                                        borderRadius: 'var(--radius)',
+                                        padding: '1rem 1.25rem',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.15s var(--ease)',
+                                        textAlign: 'left',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '1rem',
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.borderColor = 'var(--warning)';
+                                        e.currentTarget.style.transform = 'translateY(-2px)';
+                                        e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.borderColor = 'var(--border)';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = 'var(--shadow-xs)';
+                                    }}
+                                >
+                                    <div style={{
+                                        width: 44,
+                                        height: 44,
+                                        minWidth: 44,
+                                        background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
+                                        borderRadius: 'var(--radius-sm)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '1.5rem',
+                                        boxShadow: '0 2px 8px rgba(245, 158, 11, 0.25)',
+                                    }}>🏢</div>
+                                    <div>
+                                        <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text)', marginBottom: '0.25rem' }}>
+                                            Fixed Asset
+                                        </div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                                            Stationary items at store locations
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* ── Success Banner after registration ── */}
+            {lastAdded && (
+                <div style={{
+                    background: 'var(--success-light)', border: '1px solid rgba(16,185,129,0.3)',
+                    borderRadius: 'var(--radius)', padding: '1rem 1.25rem', marginBottom: '1.5rem',
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem'
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
+                        <div style={{ width: 42, height: 42, background: 'rgba(16,185,129,0.15)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem', flexShrink: 0 }}>✅</div>
+                        <div>
+                            <div style={{ fontWeight: 700, color: '#065f46', fontSize: '0.95rem' }}>
+                                {lastAdded.count} {lastAdded.count > 1 ? 'Assets' : 'Asset'} Registered Successfully!
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: '#047857', marginTop: 2 }}>
+                                All assets are now available in inventory
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <Link to="/store-manager/inventory" className="btn btn-success btn-sm">
+                            View Inventory →
+                        </Link>
+                        <button className="btn btn-ghost btn-sm" onClick={() => setLastAdded(null)}>Dismiss</button>
+                    </div>
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit} style={{ filter: showTypeModal ? 'blur(4px)' : 'none', opacity: showTypeModal ? 0.5 : 1, pointerEvents: showTypeModal ? 'none' : 'auto' }}>
+                {/* Bulk Mode Header */}
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '1.5rem',
+                    padding: '1rem 1.25rem',
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    boxShadow: 'var(--shadow-xs)',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div>
+                            <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text)', marginBottom: '0.25rem' }}>
+                                📦 Bulk Entry Mode
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                Add multiple assets at once • {assets.length} {assets.length === 1 ? 'asset' : 'assets'} in queue
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={addAssetRow}>
+                            + Add Another
+                        </button>
+                        {assets.length > 1 && (
+                            <button type="button" className="btn btn-ghost btn-sm" onClick={clearAll}>
+                                Clear All
+                            </button>
+                        )}
+                    </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '1.25rem', alignItems: 'start' }}>
+
+                    {/* ── LEFT COLUMN ── */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {assets.map((asset, index) => (
+                            <div key={asset.id}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                                    <button type="button" className="btn btn-ghost btn-sm" onClick={handleBackToSelection}>
+                                        ← Change Type
+                                    </button>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0.875rem', background: assetType === 'movable' ? 'var(--accent-light)' : 'var(--warning-light)', borderRadius: 'var(--radius-full)', border: `1px solid ${assetType === 'movable' ? 'var(--accent)' : 'var(--warning)'}` }}>
+                                        <span style={{ fontSize: '1.2rem' }}>{assetType === 'movable' ? '🎒' : '🏢'}</span>
+                                        <span style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'capitalize', color: assetType === 'movable' ? 'var(--accent-hover)' : '#b45309' }}>
+                                            {assetType === 'movable' ? 'Movable' : 'Fixed'} Asset
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Asset Card Wrapper */}
+                                <div className="card" style={{ position: 'relative', marginBottom: assets.length > 1 ? '0.5rem' : '0' }}>
+                            {assets.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={() => removeAssetRow(asset.id)}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '1rem',
+                                        right: '1rem',
+                                        background: 'var(--danger-light)',
+                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                        color: 'var(--danger)',
+                                        borderRadius: 'var(--radius-sm)',
+                                        width: 28,
+                                        height: 28,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        fontSize: '1.2rem',
+                                        transition: 'all 0.15s var(--ease)',
+                                    }}
+                                    onMouseEnter={e => {
+                                        e.currentTarget.style.background = 'var(--danger)';
+                                        e.currentTarget.style.color = 'white';
+                                    }}
+                                    onMouseLeave={e => {
+                                        e.currentTarget.style.background = 'var(--danger-light)';
+                                        e.currentTarget.style.color = 'var(--danger)';
+                                    }}
+                                    title="Remove this asset"
+                                >
+                                    ✕
+                                </button>
+                            )}
+
+                            {assets.length > 1 && (
+                                <div style={{
+                                    position: 'absolute',
+                                    top: '1rem',
+                                    left: '1.25rem',
+                                    background: 'var(--accent-light)',
+                                    color: 'var(--accent)',
+                                    fontWeight: 700,
+                                    fontSize: '0.75rem',
+                                    padding: '0.25rem 0.625rem',
+                                    borderRadius: 'var(--radius-full)',
+                                    border: '1px solid var(--accent)',
+                                }}>
+                                    Asset #{index + 1}
+                                </div>
+                            )}
+
+                            <div style={{ paddingTop: assets.length > 1 ? '2.5rem' : '0' }}>
+                            <div className="section-header">
+                                <div className="section-title">📋 Basic Information</div>
+                                <div className="section-subtitle">Core identification details for this asset</div>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Asset Name *</label>
+                                <input type="text" className="form-input" name="name" value={asset.name} onChange={(e) => handleChange(asset.id, e)} required placeholder="e.g. MacBook Pro M3" />
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="form-group">
+                                    <label className="form-label">Category *</label>
+                                    <select className="form-select" name="category" value={asset.category} onChange={(e) => handleChange(asset.id, e)} required>
+                                        <option value="" disabled>Select category</option>
+                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Initial Condition *</label>
+                                    <select className="form-select" name="condition" value={asset.condition} onChange={(e) => handleChange(asset.id, e)}>
+                                        <option value="new">New</option>
+                                        <option value="good">Good</option>
+                                        <option value="damaged">Damaged</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="form-group">
+                                    <label className="form-label">Serial Number *</label>
+                                    <input type="text" className="form-input" name="serialNumber" value={asset.serialNumber} onChange={(e) => handleChange(asset.id, e)} required placeholder="e.g. SN-2024-001" style={{ fontFamily: 'monospace' }} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Storage Location</label>
+                                    <input type="text" className="form-input" name="location" value={asset.location} onChange={(e) => handleChange(asset.id, e)} placeholder="e.g. Shelf B-3, Drawer 2" />
+                                </div>
+                            </div>
+
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">Internal Notes</label>
+                                <textarea className="form-textarea" name="notes" value={asset.notes} onChange={(e) => handleChange(asset.id, e)} placeholder="Any extra info about this asset..." rows={2} />
+                            </div>
+                        </div>
+
+                        {/* Purchase Info */}
+                        <div className="card">
+                            <div className="section-header">
+                                <div className="section-title">🛒 Purchase Details</div>
+                                <div className="section-subtitle">Financial and vendor information</div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label className="form-label">Vendor / Supplier</label>
+                                    <input type="text" className="form-input" name="vendor" value={asset.vendor} onChange={(e) => handleChange(asset.id, e)} placeholder="e.g. Dell India" />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label className="form-label">Purchase Date</label>
+                                    <input type="date" className="form-input" name="purchaseDate" value={asset.purchaseDate} onChange={(e) => handleChange(asset.id, e)} />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label className="form-label">Purchase Price (₹)</label>
+                                    <input type="number" className="form-input" name="purchasePrice" value={asset.purchasePrice} onChange={(e) => handleChange(asset.id, e)} placeholder="e.g. 85000" min="0" />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Warranty */}
+                        <div className="card">
+                            <div className="section-header">
+                                <div className="section-title">🛡️ Warranty Information</div>
+                                <div className="section-subtitle">Warranty coverage and expiry details</div>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="form-group">
+                                    <label className="form-label">Warranty Provider</label>
+                                    <input type="text" className="form-input" name="provider" value={asset.warranty.provider} onChange={(e) => handleWarranty(asset.id, e)} placeholder="e.g. Dell, Apple Care" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Warranty Expiry Date</label>
+                                    <input type="date" className="form-input" name="expiryDate" value={asset.warranty.expiryDate} onChange={(e) => handleWarranty(asset.id, e)} />
+                                </div>
+                            </div>
+                            <div className="form-group" style={{ marginBottom: 0 }}>
+                                <label className="form-label">Warranty Notes</label>
+                                <textarea className="form-textarea" name="notes" value={asset.warranty.notes} onChange={(e) => handleWarranty(asset.id, e)} placeholder="e.g. On-site support included, 3-year coverage..." rows={2} />
+                            </div>
+                        </div>
+
+                        {/* Asset Photos */}
+                        <div className="card">
+                            <div className="section-header">
+                                <div className="section-title">📷 Asset Photos</div>
+                                <div className="section-subtitle">Upload up to 5 photos of this asset</div>
+                            </div>
+
+                            <input ref={el => fileRefs.current[asset.id] = el} type="file" accept="image/*" multiple onChange={(e) => handleImages(asset.id, e)} style={{ display: 'none' }} />
+
+                            {(previewImages[asset.id] || []).length < 5 && (
+                                <div
+                                    className="image-dropzone"
+                                    onClick={() => fileRefs.current[asset.id]?.click()}
+                                    style={{
+                                        border: '2px dashed var(--border)', borderRadius: 'var(--radius)', padding: '2rem',
+                                        textAlign: 'center', cursor: 'pointer', marginBottom: '1rem', transition: 'all 0.2s',
+                                    }}
+                                    onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+                                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+                                >
+                                    <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📁</div>
+                                    <div style={{ fontWeight: 600, color: 'var(--text)' }}>Click to upload photos</div>
+                                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                                        PNG, JPG, GIF supported — max 5 images ({5 - (previewImages[asset.id] || []).length} remaining)
+                                    </div>
+                                </div>
+                            )}
+
+                            {(previewImages[asset.id] || []).length > 0 && (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.5rem' }}>
+                                    {(previewImages[asset.id] || []).map((src, i) => (
+                                        <div key={i} style={{ position: 'relative', borderRadius: 'var(--radius-sm)', overflow: 'hidden', aspectRatio: '1', border: '1px solid var(--border)' }}>
+                                            <img src={src} alt={`asset-${asset.id}-${i}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeImage(asset.id, i)}
+                                                style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(239,68,68,0.9)', border: 'none', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', color: '#fff', fontSize: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {index < assets.length - 1 && (
+                            <div style={{ height: '1px', background: 'var(--border)', margin: '1.5rem 0' }} />
+                        )}
+                            </div>
+                ))}
+
+                {/* Submit Button */}
+                <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: '100%', justifyContent: 'center', padding: '0.875rem', fontSize: '1rem', marginTop: '0.5rem' }}>
+                    {loading ? (
+                        <span><div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Registering {assets.length} {assets.length > 1 ? 'Assets' : 'Asset'}…</span>
+                    ) : (
+                        <span>✓ Register {assets.length} {assets.length > 1 ? 'Assets' : 'Asset'}</span>
+                    )}
+                </button>
+
+                    {/* ── RIGHT COLUMN — Guidelines ── */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        <div className="card" style={{ background: 'rgba(99,102,241,0.05)', border: '1px solid rgba(99,102,241,0.15)' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                                {[
+                                    'Serial numbers must be unique — check existing inventory first.',
+                                    'Choose "New" condition only for brand-new, unused assets.',
+                                    '"Good" means functional with minor wear.',
+                                    '"Damaged" is for assets needing repair before assignment.',
+                                    'Assets are available for assignment immediately after registration.',
+                                    'Warranty info helps track service claims and expiry alerts.',
+                                    'Photos help identify assets during physical audits.',
+                                ].map((tip, i) => (
+                                    <div key={i} style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <span style={{ color: 'var(--accent)', fontWeight: 700, flexShrink: 0 }}>{i + 1}.</span>
+                                        <span>{tip}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="card" style={{ background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)' }}>
+                            <div className="section-title" style={{ color: 'var(--warning)', marginBottom: '0.875rem' }}>⚡ Warranty Alert</div>
+                            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                                Always record warranty expiry dates. You will see near-expiry alerts in the Inventory page for assets expiring within 30 days.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+        </div>
+    );
+}
