@@ -115,6 +115,7 @@ export const purchaseOrdersAPI = {
     updateStatus: (id, data) => api.patch(`/purchase-orders/${id}/status`, data),
     receiveAndAdd: (id, data) => api.post(`/purchase-orders/${id}/receive`, data),
     bulkReceive: (id, assets) => api.post(`/purchase-orders/${id}/bulk-receive`, { assets }),
+    cancel: (id, data) => api.patch(`/purchase-orders/${id}/cancel`, data),
 };
 
 // ─── Maintenance ───

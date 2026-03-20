@@ -16,6 +16,7 @@ router.get('/:id', authorize('store_manager', 'manager', 'director'), c.getPurch
 
 // Status advancement
 router.patch('/:id/status', authorize('store_manager'), c.updatePurchaseStatus);
+router.patch('/:id/cancel', authorize('store_manager'), c.cancelPurchaseOrder);
 
 // Receive asset + add to inventory (+ optional auto-assign)
 router.post('/:id/receive', authorize('store_manager'), c.receiveAndAddAsset);

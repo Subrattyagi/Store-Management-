@@ -28,6 +28,11 @@ const purchaseOrderSchema = new mongoose.Schema(
             default: 1,
             min: [1, 'Quantity must be at least 1'],
         },
+        receivedQuantity: {
+            type: Number,
+            default: 0,
+            min: [0, 'Received quantity cannot be negative'],
+        },
 
         // Vendor & cost
         vendor: { type: String, trim: true },
@@ -50,7 +55,7 @@ const purchaseOrderSchema = new mongoose.Schema(
         // Procurement lifecycle
         purchaseStatus: {
             type: String,
-            enum: ['pending_purchase', 'ordered', 'received'],
+            enum: ['pending_purchase', 'ordered', 'received', 'cancelled'],
             default: 'pending_purchase',
         },
 

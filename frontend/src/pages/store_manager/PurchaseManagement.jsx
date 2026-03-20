@@ -10,6 +10,7 @@ const STATUS_META = {
     pending_purchase: { label: 'Pending Purchase', color: '#a855f7', bg: '#a855f715', icon: '🕐' },
     ordered: { label: 'Ordered', color: '#f59e0b', bg: '#f59e0b15', icon: '📦' },
     received: { label: 'Received', color: '#10b981', bg: '#10b98115', icon: '✅' },
+    cancelled: { label: 'Cancelled', color: '#ef4444', bg: '#ef444415', icon: '❌' },
 };
 
 function fmt(d) {
@@ -200,10 +201,24 @@ function PlaceOrderModal({ po, onClose, onSuccess }) {
                     </form>
                 </div>
                 <div className="modal-footer">
-                    <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-                    <button type="submit" form="placeOrderForm" className="btn btn-warning" disabled={submitting}>
-                        {submitting ? 'Saving…' : '📦 Confirm Order Placed'}
-                    </button>
+                    <button className="btn btn-ghost" onClick={onClose}>Discard</button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button
+                            type="button"
+                            className="btn"
+                            style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)' }}
+                            onClick={() => {
+                                const targetPo = po;
+                                onClose();
+                                setTimeout(() => setCancelOrderModal(targetPo), 100);
+                            }}
+                        >
+                            Cancel Request
+                        </button>
+                        <button type="submit" form="placeOrderForm" className="btn btn-warning" disabled={submitting}>
+                            {submitting ? 'Saving…' : '📦 Confirm Order Placed'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -265,7 +280,7 @@ function MarkReceivedModal({ po, onClose, onSuccess }) {
    Add to Inventory Modal — Bulk Serial Entry Wizard
 ────────────────────────────────────────────── */
 function AddToInventoryModal({ po, onClose, onSuccess }) {
-    const qty = po.quantity || 1;
+    const orderedQty = po.quantity || 1;
     const hasLinkedEmployee = !!(po.linkedAssetRequest?.requestedBy);
 
     // ── Shared asset details ──
@@ -278,12 +293,27 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
         assetType: 'movable',
         location: '',
         notes: po.notes || '',
-        autoAssign: hasLinkedEmployee && qty === 1,
+        autoAssign: hasLinkedEmployee && orderedQty === 1,
     });
 
-    // ── Serials: one entry per unit ──
-    const [serials, setSerials] = useState(() => Array.from({ length: qty }, () => ({ value: '', status: 'idle' })));
+    // ── Received qty & Serials ──
+    const [receivedQty, setReceivedQty] = useState(orderedQty);
+    const [serials, setSerials] = useState(() => Array.from({ length: orderedQty }, () => ({ value: '', status: 'idle' })));
     const inputRefs = useRef([]);
+
+    // Sync serials array when receivedQty changes
+    useEffect(() => {
+        setSerials(prev => {
+            const current = [...prev];
+            if (receivedQty > current.length) {
+                const diff = receivedQty - current.length;
+                return [...current, ...Array.from({ length: diff }, () => ({ value: '', status: 'idle' }))];
+            } else if (receivedQty < current.length) {
+                return current.slice(0, receivedQty);
+            }
+            return current;
+        });
+    }, [receivedQty]);
 
     // ── Step: 'details' | 'serials' ──
     const [step, setStep] = useState('details');
@@ -326,7 +356,7 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
     // After scanner fires and focus moves naturally, auto-advance from filled rows
     const handleBlur = (idx) => {
         const v = serials[idx].value.trim();
-        if (v && idx < qty - 1) {
+        if (v && idx < receivedQty - 1) {
             setTimeout(() => {
                 // Only auto-advance if next one is still empty
                 if (!serials[idx + 1]?.value.trim()) {
@@ -349,14 +379,14 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
 
     const filled = serials.filter(s => s.value.trim()).length;
     const hasDuplicates = serials.some(s => s.status === 'duplicate');
-    const allFilled = filled === qty;
+    const allFilled = filled === receivedQty;
     const canSubmit = allFilled && !hasDuplicates;
 
     const handleSubmit = async () => {
         if (!canSubmit) return;
         setSubmitting(true);
         try {
-            if (qty === 1) {
+            if (receivedQty === 1) {
                 // Single asset — existing single-asset endpoint
                 await purchaseOrdersAPI.receiveAndAdd(po._id, {
                     ...shared,
@@ -446,9 +476,26 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                 </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Storage Location</label>
-                <input className="form-input" value={shared.location} onChange={setS('location')} placeholder="e.g. Store Room A, Shelf 3" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Quantity Received *</label>
+                    <input
+                        className="form-input"
+                        type="number"
+                        min={1}
+                        max={orderedQty}
+                        value={receivedQty}
+                        onChange={e => setReceivedQty(Number(e.target.value) || 1)}
+                        required
+                    />
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>
+                        Ordered: {orderedQty} units
+                    </div>
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Storage Location</label>
+                    <input className="form-input" value={shared.location} onChange={setS('location')} placeholder="e.g. Store Room A, Shelf 3" />
+                </div>
             </div>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -456,8 +503,8 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                 <textarea className="form-input" rows={2} value={shared.notes} onChange={setS('notes')} style={{ resize: 'vertical' }} />
             </div>
 
-            {/* Single-unit serial (only rendered here when qty === 1) */}
-            {qty === 1 && (
+            {/* Single-unit serial (only rendered here when receivedQty === 1) */}
+            {receivedQty === 1 && (
                 <div className="form-group" style={{ marginBottom: 0 }}>
                     <label className="form-label">Serial Number *</label>
                     <input
@@ -472,7 +519,7 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                 </div>
             )}
 
-            {hasLinkedEmployee && qty === 1 && (
+            {hasLinkedEmployee && orderedQty === 1 && receivedQty === 1 && (
                 <div style={{
                     background: 'rgba(99,102,241,0.07)',
                     border: '1px solid rgba(99,102,241,0.25)',
@@ -531,14 +578,14 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                         background: canSubmit ? 'rgba(5,150,105,0.08)' : 'rgba(99,102,241,0.08)',
                         padding: '2px 10px', borderRadius: 999,
                     }}>
-                        {filled} / {qty} {hasDuplicates ? '· ⚠ Duplicate detected' : canSubmit ? '· ✓ Ready' : ''}
+                        {filled} / {receivedQty} {hasDuplicates ? '· ⚠ Duplicate detected' : canSubmit ? '· ✓ Ready' : ''}
                     </span>
                 </div>
                 <div style={{ height: 5, background: 'var(--border)', borderRadius: 999, overflow: 'hidden' }}>
                     <div style={{
                         height: '100%', borderRadius: 999,
                         background: hasDuplicates ? '#f59e0b' : '#6366f1',
-                        width: `${(filled / qty) * 100}%`,
+                        width: `${(filled / receivedQty) * 100}%`,
                         transition: 'width 0.25s ease',
                     }} />
                 </div>
@@ -567,7 +614,7 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                     borderRadius: 'var(--radius-sm)', background: 'var(--bg-secondary)',
                 }}>
                     <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginBottom: 6 }}>
-                        Paste {qty} serial numbers — one per line (or comma/semicolon separated):
+                        Paste {receivedQty} serial numbers — one per line (or comma/semicolon separated):
                     </div>
                     <textarea
                         className="form-input"
@@ -664,14 +711,14 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
 
     return (
         <div className="glass-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-            <div className="premium-card" style={{ maxWidth: qty > 1 ? 640 : 600, width: '95vw', padding: 0 }} onClick={e => e.stopPropagation()}>
+            <div className="premium-card" style={{ maxWidth: receivedQty > 1 ? 640 : 600, width: '95vw', padding: 0 }} onClick={e => e.stopPropagation()}>
 
                 {/* Header */}
                 <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
                     <div>
                         <h3>Add to Inventory</h3>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
-                            {qty > 1 && (
+                            {receivedQty > 1 && (
                                 <>
                                     {/* Step breadcrumb */}
                                     <span style={{
@@ -686,10 +733,10 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                                         borderRadius: 999,
                                         background: step === 'serials' ? '#6366f1' : 'var(--bg-secondary)',
                                         color: step === 'serials' ? '#fff' : 'var(--text-muted)',
-                                    }}>2 Serial Numbers ({qty} units)</span>
+                                    }}>2 Serial Numbers ({receivedQty} units)</span>
                                 </>
                             )}
-                            {qty === 1 && (
+                            {receivedQty === 1 && (
                                 <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>
                                     {po.assetCategory} · {po.vendor || 'No vendor'}
                                 </span>
@@ -706,7 +753,7 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
 
                 {/* Footer */}
                 <div className="modal-footer">
-                    {step === 'serials' && qty > 1 ? (
+                    {step === 'serials' && receivedQty > 1 ? (
                         <>
                             <button type="button" className="btn btn-ghost" onClick={() => setStep('details')}>
                                 ← Back
@@ -716,17 +763,17 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                                 className="btn btn-success"
                                 disabled={submitting || !canSubmit}
                                 onClick={handleSubmit}
-                                title={hasDuplicates ? 'Fix duplicate serials first' : !allFilled ? `${qty - filled} serial(s) still empty` : ''}
+                                title={hasDuplicates ? 'Fix duplicate serials first' : !allFilled ? `${receivedQty - filled} serial(s) still empty` : ''}
                             >
                                 {submitting
-                                    ? `Adding ${qty} Assets…`
-                                    : `📦 Add ${qty} Assets to Inventory`}
+                                    ? `Adding ${receivedQty} Assets…`
+                                    : `📦 Add ${receivedQty} Assets to Inventory`}
                             </button>
                         </>
                     ) : (
                         <>
                             <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-                            {qty > 1 ? (
+                            {receivedQty > 1 ? (
                                 <button
                                     type="button"
                                     className="btn btn-primary"
@@ -753,6 +800,67 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
     );
 }
 
+
+/* ──────────────────────────────────────────────
+   Cancel Order Modal
+────────────────────────────────────────────── */
+function CancelOrderModal({ po, onClose, onSuccess }) {
+    const [note, setNote] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            await purchaseOrdersAPI.cancel(po._id, { note: note || 'Order cancelled by store manager' });
+            toast.success('Purchase order cancelled');
+            onSuccess();
+            onClose();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to cancel order');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="glass-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+            <div className="premium-card" style={{ maxWidth: 400, width: '95vw', padding: 0 }} onClick={e => e.stopPropagation()}>
+                <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+                    <div>
+                        <h3>Cancel Purchase Order</h3>
+                        <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>This will stop procurement and reset any linked requests</p>
+                    </div>
+                    <button className="modal-close" onClick={onClose}>×</button>
+                </div>
+                <div className="modal-body">
+                    <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                        Are you sure you want to cancel the order for <strong>{po.assetCategory}</strong>?
+                    </p>
+                    <form id="cancelOrderForm" onSubmit={handleSubmit}>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label">Reason for cancellation (optional)</label>
+                            <textarea
+                                className="form-input"
+                                rows={2}
+                                value={note}
+                                onChange={e => setNote(e.target.value)}
+                                placeholder="e.g. Budget constraints, Vendor unavailable…"
+                                style={{ resize: 'vertical' }}
+                            />
+                        </div>
+                    </form>
+                </div>
+                <div className="modal-footer">
+                    <button className="btn btn-ghost" onClick={onClose}>Stay Active</button>
+                    <button type="submit" form="cancelOrderForm" className="btn btn-danger" disabled={submitting}>
+                        {submitting ? 'Cancelling…' : '❌ Confirm Cancellation'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 /* ──────────────────────────────────────────────
    Timeline Drawer
@@ -827,6 +935,7 @@ export default function PurchaseManagement() {
     const [placeOrderModal, setPlaceOrderModal] = useState(null);
     const [markReceivedModal, setMarkReceivedModal] = useState(null);
     const [addInventoryModal, setAddInventoryModal] = useState(null);
+    const [cancelOrderModal, setCancelOrderModal] = useState(null);
     const [timelineModal, setTimelineModal] = useState(null);
 
     const fetchData = useCallback(async () => {
@@ -852,6 +961,7 @@ export default function PurchaseManagement() {
         { key: 'pending_purchase', label: 'Pending Purchase', value: counts.pending_purchase, color: '#a855f7', bg: '#a855f715', icon: '🕐' },
         { key: 'ordered', label: 'Ordered', value: counts.ordered, color: '#f59e0b', bg: '#f59e0b15', icon: '📦' },
         { key: 'received', label: 'Received', value: counts.received, color: '#10b981', bg: '#10b98115', icon: '✅' },
+        { key: 'cancelled', label: 'Cancelled', value: counts.cancelled, color: '#ef4444', bg: '#ef444415', icon: '❌' },
     ];
 
     return (
@@ -966,12 +1076,9 @@ export default function PurchaseManagement() {
                             {orders.map(po => {
                                 const meta = STATUS_META[po.purchaseStatus];
                                 // Bulk PO: fully added when linkedAssets.length >= quantity
-                                const linkedCount = po.linkedAssets?.length || 0;
                                 const isBulk = po.quantity > 1;
-                                const hasLinkedAsset = isBulk
-                                    ? linkedCount >= po.quantity
-                                    : !!po.linkedAsset;
-                                const partiallyAdded = isBulk && linkedCount > 0 && linkedCount < po.quantity;
+                                const hasLinkedAsset = (po.receivedQuantity || 0) >= po.quantity;
+                                const partiallyAdded = isBulk && (po.receivedQuantity || 0) > 0 && (po.receivedQuantity || 0) < po.quantity;
                                 return (
                                     <tr key={po._id}>
                                         {/* Asset Category */}
@@ -1018,16 +1125,20 @@ export default function PurchaseManagement() {
                                             }}>
                                                 {meta?.icon} {meta?.label}
                                             </span>
-                                            {hasLinkedAsset && (
-                                                <div style={{ fontSize: '0.68rem', color: '#10b981', marginTop: 4, fontWeight: 600 }}>
-                                                    ✓ {isBulk ? `${linkedCount}/${po.quantity} In Inventory` : 'In Inventory'}
+                                            <div style={{ marginTop: 6 }}>
+                                                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: 2 }}>
+                                                    Received: <strong>{po.receivedQuantity || 0}</strong> / {po.quantity}
                                                 </div>
-                                            )}
-                                            {partiallyAdded && (
-                                                <div style={{ fontSize: '0.68rem', color: '#f59e0b', marginTop: 4, fontWeight: 600 }}>
-                                                    ⚠ {linkedCount}/{po.quantity} added
+                                                {/* Progress Bar */}
+                                                <div style={{ width: '100%', height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
+                                                    <div style={{
+                                                        width: `${Math.min(100, ((po.receivedQuantity || 0) / po.quantity) * 100)}%`,
+                                                        height: '100%',
+                                                        background: (po.receivedQuantity || 0) >= po.quantity ? '#10b981' : '#6366f1',
+                                                        borderRadius: 2
+                                                    }} />
                                                 </div>
-                                            )}
+                                            </div>
                                         </td>
 
                                         {/* Order Date */}
@@ -1052,23 +1163,45 @@ export default function PurchaseManagement() {
                                                     🕐
                                                 </button>
 
-                                                {/* Advance: pending → ordered */}
+                                                {/* Actions for Pending Purchase */}
                                                 {po.purchaseStatus === 'pending_purchase' && (
-                                                    <button className="btn btn-warning btn-sm" onClick={() => setPlaceOrderModal(po)}>
-                                                        📦 Place Order
-                                                    </button>
+                                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                                        <button
+                                                            className="btn btn-warning btn-sm"
+                                                            style={{ fontWeight: 600 }}
+                                                            onClick={() => setPlaceOrderModal(po)}
+                                                        >
+                                                            📦 Place Order
+                                                        </button>
+                                                        <button
+                                                            className="btn btn-ghost btn-sm"
+                                                            style={{ color: '#ef4444', minWidth: 'auto', padding: '0 8px' }}
+                                                            onClick={() => setCancelOrderModal(po)}
+                                                            title="Cancel Purchase Request"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    </div>
                                                 )}
 
-                                                {/* Advance: ordered → received */}
+                                                {/* Actions for Ordered */}
                                                 {po.purchaseStatus === 'ordered' && (
-                                                    <button className="btn btn-success btn-sm" onClick={() => setMarkReceivedModal(po)}>
+                                                    <button
+                                                        className="btn btn-success btn-sm"
+                                                        style={{ fontWeight: 600 }}
+                                                        onClick={() => setMarkReceivedModal(po)}
+                                                    >
                                                         ✅ Mark Received
                                                     </button>
                                                 )}
 
                                                 {/* Add to inventory (only if received + not yet linked) */}
                                                 {po.purchaseStatus === 'received' && !hasLinkedAsset && (
-                                                    <button className="btn btn-primary btn-sm" onClick={() => setAddInventoryModal(po)}>
+                                                    <button
+                                                        className="btn btn-primary btn-sm"
+                                                        style={{ fontWeight: 600 }}
+                                                        onClick={() => setAddInventoryModal(po)}
+                                                    >
                                                         🏷️ Add to Inventory
                                                     </button>
                                                 )}
@@ -1101,6 +1234,9 @@ export default function PurchaseManagement() {
             )}
             {addInventoryModal && (
                 <AddToInventoryModal po={addInventoryModal} onClose={() => setAddInventoryModal(null)} onSuccess={fetchData} />
+            )}
+            {cancelOrderModal && (
+                <CancelOrderModal po={cancelOrderModal} onClose={() => setCancelOrderModal(null)} onSuccess={fetchData} />
             )}
             {timelineModal && (
                 <TimelineDrawer po={timelineModal} onClose={() => setTimelineModal(null)} />

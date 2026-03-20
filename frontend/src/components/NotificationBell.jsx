@@ -113,7 +113,7 @@ export default function NotificationBell({ isCollapsed }) {
                                     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
                                 </svg>
                                 <p>You're all caught up!</p>
-                            </div>
+                            </div>  
                         ) : (
                             notifications.map((notif) => (
                                 <div

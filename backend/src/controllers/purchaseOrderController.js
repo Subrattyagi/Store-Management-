@@ -253,6 +253,7 @@ exports.receiveAndAddAsset = [
 
             // 2. Link asset to PO
             po.linkedAsset = asset._id;
+            po.receivedQuantity = 1; // For single asset POs
             po.timeline.push({
                 status: 'received',
                 note: `Asset added to inventory: ${name} (${serialNumber})`,
@@ -391,6 +392,9 @@ exports.bulkReceiveAndAdd = [
             const createdIds = createdAssets.map(a => a._id);
             po.linkedAssets.push(...createdIds);
 
+            // Update received quantity
+            po.receivedQuantity = (po.receivedQuantity || 0) + createdAssets.length;
+
             // For backward compat: set linkedAsset to the first one if not already set
             if (!po.linkedAsset && createdAssets.length > 0) {
                 po.linkedAsset = createdAssets[0]._id;
@@ -431,18 +435,79 @@ exports.bulkReceiveAndAdd = [
     }),
 ];
 
+// ─────────────────────────────────────────────
+// @desc   Cancel a purchase order
+// @route  PATCH /api/purchase-orders/:id/cancel
+// @access store_manager
+// ─────────────────────────────────────────────
+exports.cancelPurchaseOrder = asyncHandler(async (req, res, next) => {
+    const po = await PurchaseOrder.findById(req.params.id);
+    if (!po) return next(new AppError('Purchase order not found', 404));
+
+    if (po.purchaseStatus === 'received') {
+        return next(new AppError('Cannot cancel a received purchase order', 400));
+    }
+
+    if (po.receivedQuantity > 0) {
+        return next(new AppError('Cannot cancel a purchase order that has already been partially received in inventory', 400));
+    }
+
+    const { note } = req.body;
+
+    po.purchaseStatus = 'cancelled';
+    po.timeline.push({
+        status: 'cancelled',
+        note: note || 'Purchase order cancelled',
+        by: req.user._id,
+    });
+
+    await po.save();
+
+    // If linked to an AssetRequest, reset it to pending_store so it can be re-processed
+    if (po.linkedAssetRequest) {
+        const assetReq = await AssetRequest.findById(po.linkedAssetRequest);
+        if (assetReq && assetReq.status === 'purchase_requested') {
+            assetReq.status = 'pending_store';
+            assetReq.storeNote = `Purchase Order cancelled by ${req.user.name}. Request returned to pending pool.`;
+            assetReq.timeline.push({
+                status: 'pending_store',
+                note: `Linked Purchase Order cancelled — returning request to pending pool`,
+                by: req.user._id,
+            });
+            await assetReq.save();
+        }
+    }
+
+    await createAuditLog({
+        action: `Purchase Order ${po._id} CANCELLED`,
+        performedBy: req.user._id,
+    });
+
+    const populated = await populate(PurchaseOrder.findById(po._id));
+    res.status(200).json({ status: 'success', data: { purchaseOrder: populated } });
+});
+
 // @route  GET /api/purchase-orders/counts
 // @access store_manager, manager, director
 // ─────────────────────────────────────────────
 exports.getPurchaseCounts = asyncHandler(async (req, res) => {
-    const [pending, ordered, received] = await Promise.all([
+    const [pending, ordered, received, cancelled] = await Promise.all([
         PurchaseOrder.countDocuments({ purchaseStatus: 'pending_purchase' }),
         PurchaseOrder.countDocuments({ purchaseStatus: 'ordered' }),
         PurchaseOrder.countDocuments({ purchaseStatus: 'received' }),
+        PurchaseOrder.countDocuments({ purchaseStatus: 'cancelled' }),
     ]);
 
     res.status(200).json({
         status: 'success',
-        data: { counts: { pending_purchase: pending, ordered, received, total: pending + ordered + received } },
+        data: {
+            counts: {
+                pending_purchase: pending,
+                ordered,
+                received,
+                cancelled,
+                total: pending + ordered + received + cancelled
+            }
+        },
     });
 });
