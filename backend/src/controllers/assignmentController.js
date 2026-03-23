@@ -313,7 +313,7 @@ exports.reportLost = asyncHandler(async (req, res, next) => {
         asset.status = 'lost';
         await asset.save({ session });
 
-        assignment.status = 'returned';
+        assignment.status = 'lost';
         assignment.notes = req.body.reason || 'Reported as lost by employee';
         await assignment.save({ session });
 

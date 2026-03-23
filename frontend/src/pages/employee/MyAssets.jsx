@@ -97,6 +97,41 @@ function RequestFormModal({ onClose, onSuccess }) {
     );
 }
 
+function ReportLostModal({ onClose, onSubmit, submitting }) {
+    const [reason, setReason] = useState('');
+    return (
+        <div className="modal-overlay glass-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+            <div className="modal premium-card" style={{ maxWidth: 440, border: 'none', padding: 0, overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(226, 232, 240, 0.6)', background: 'rgba(255, 255, 255, 0.5)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#b91c1c' }}>Report Asset Lost</h3>
+                    <button className="modal-close" onClick={onClose} style={{ background: 'var(--bg)', border: '1px solid var(--border)', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>×</button>
+                </div>
+                <div style={{ padding: '1.5rem' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', lineHeight: 1.5 }}>
+                        Reporting an asset as lost is irreversible and will notify the Store Manager immediately. Please provide specific details about how or where the asset was lost.
+                    </p>
+                    <form id="lostForm" onSubmit={e => { e.preventDefault(); onSubmit(reason); }} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div>
+                            <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Details of Loss *</label>
+                            <textarea className="form-input" rows={4}
+                                placeholder="E.g., Left on train, stolen from car, misplaced during travel..."
+                                value={reason}
+                                onChange={e => setReason(e.target.value)}
+                                required style={{ resize: 'vertical' }} />
+                        </div>
+                    </form>
+                </div>
+                <div style={{ padding: '1.5rem', borderTop: '1px solid rgba(226, 232, 240, 0.6)', background: 'rgba(255, 255, 255, 0.5)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                    <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+                    <button type="submit" form="lostForm" className="btn btn-danger" disabled={submitting} style={{ background: '#ef4444', color: 'white', border: 'none' }}>
+                        {submitting ? 'Submitting…' : 'Report Lost'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function RequestTimeline({ request }) {
     if (!request) return null;
 
@@ -200,8 +235,18 @@ export default function MyAssets() {
     const [myRequests, setMyRequests] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState('assets'); // 'assets' | 'requests'
+    const [requestFilter, setRequestFilter] = useState('pending'); // 'pending' | 'active' | 'history' | 'all'
     const [showRequestModal, setShowRequestModal] = useState(false);
+    const [showLostModal, setShowLostModal] = useState(null); // holds asset_id
+    const [submittingLost, setSubmittingLost] = useState(false);
     const [expandedRequest, setExpandedRequest] = useState(null);
+
+    const isDelayed = (date) => {
+        const created = new Date(date);
+        const now = new Date();
+        const diff = (now - created) / (1000 * 60 * 60 * 24);
+        return diff > 7;
+    };
 
     const fetchData = async () => {
         try {
@@ -231,15 +276,18 @@ export default function MyAssets() {
         }
     };
 
-    const handleReportLost = async (id) => {
-        const reason = window.prompt('Describe how the asset was lost:');
-        if (!reason) return;
+    const submitReportLost = async (reason) => {
+        if (!showLostModal) return;
+        setSubmittingLost(true);
         try {
-            await assignmentsAPI.reportLost(id, { reason });
+            await assignmentsAPI.reportLost(showLostModal, { reason });
             toast.success('Asset reported as lost');
             fetchData();
+            setShowLostModal(null);
         } catch (err) {
             toast.error(err.response?.data?.message || 'Action failed');
+        } finally {
+            setSubmittingLost(false);
         }
     };
 
@@ -255,16 +303,29 @@ export default function MyAssets() {
 
     return (
         <div>
+            {showLostModal && (
+                <ReportLostModal
+                    onClose={() => setShowLostModal(null)}
+                    onSubmit={submitReportLost}
+                    submitting={submittingLost}
+                />
+            )}
             <div className="page-header">
                 <div className="page-header-left">
                     <h1>My Assets</h1>
                     <p>Manage your assigned assets and track your requests</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setShowRequestModal(true)}>
+                {/* Desktop CTA */}
+                <button className="btn btn-primary" onClick={() => setShowRequestModal(true)} style={{ gap: '0.5rem' }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     Request an Asset
                 </button>
             </div>
+
+            {/* Mobile FAB */}
+            <button className="mobile-fab" onClick={() => setShowRequestModal(true)} aria-label="Request an Asset">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+            </button>
 
             {/* Tabs */}
             <div className="glass-panel" style={{ display: 'flex', gap: '0.4rem', marginBottom: '1.5rem', borderRadius: '999px', padding: '0.4rem', width: 'fit-content' }}>
@@ -329,9 +390,9 @@ export default function MyAssets() {
                                 </div>
                                 {a.status === 'issued' && (
                                     <>
-                                        <div className="asset-card-actions" style={{ marginTop: '1.25rem', gap: '0.75rem' }}>
+                                        <div className="asset-card-actions mobile-asset-card-actions" style={{ marginTop: '1.25rem', gap: '0.75rem' }}>
                                             <button className="btn btn-warning btn-sm" style={{ flex: 1, background: '#fffbeb', border: '1px solid #fcd34d', color: '#b45309', fontWeight: 600 }} onClick={() => handleReturnRequest(a._id)}>Return Asset</button>
-                                            <button className="btn btn-danger btn-sm" style={{ flex: 1, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontWeight: 600 }} onClick={() => handleReportLost(a._id)}>Report Lost</button>
+                                            <button className="btn btn-danger btn-sm" style={{ flex: 1, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontWeight: 600 }} onClick={() => setShowLostModal(a._id)}>Report Lost</button>
                                         </div>
                                     </>
                                 )}
@@ -343,77 +404,158 @@ export default function MyAssets() {
 
             {/* ── REQUESTS TAB ── */}
             {tab === 'requests' && (
-                myRequests.length === 0 ? (
-                    <div className="card">
-                        <div className="empty-state">
-                            <span className="empty-icon">📋</span>
-                            <h3>No requests yet</h3>
-                            <p>Click "Request an Asset" to submit your first request.</p>
-                        </div>
-                    </div>
-                ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {myRequests.map(r => {
-                            const sm = STATUS_META[r.status] || { label: r.status, color: '#6366f1', icon: '●' };
-                            const um = URGENCY_META[r.urgency];
-                            const isExpanded = expandedRequest === r._id;
-                            return (
-                                <div key={r._id} className="premium-card" style={{ padding: '1.25rem 1.5rem', cursor: 'pointer' }}
-                                    onClick={() => setExpandedRequest(isExpanded ? null : r._id)}>
-                                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
-                                                <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>{r.assetCategory}</span>
-                                                <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '3px 10px', borderRadius: 999, background: um?.bg, color: um?.color, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{um?.label} Priority</span>
-                                            </div>
-                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', lineHeight: 1.5 }}>{r.assetDescription}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                                                Submitted {new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                            </div>
-                                            <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                                {sm.icon !== '●' && <span style={{ fontSize: '1.25rem' }}>{sm.icon}</span>}
-                                                <span style={{ fontWeight: 700, color: sm.color }}>{sm.label}</span>
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem', flexShrink: 0 }}>
-                                            <span style={{ fontSize: '0.8rem', fontWeight: 700, padding: '6px 14px', borderRadius: 999, background: `${sm.color}15`, color: sm.color, display: 'flex', alignItems: 'center', gap: '0.4em' }}>
-                                                {sm.icon} {sm.label}
-                                            </span>
-                                            {r.managerNote && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: 200, textAlign: 'right' }}>Note: {r.managerNote}</span>}
-                                        </div>
-                                    </div>
+                <>
+                    {/* Sub-filters for requests */}
+                    <div className="request-subfilters mobile-scroll-row">
+                        {[
+                            { id: 'pending', label: 'Awaiting Approval', icon: '⏳' },
+                            { id: 'active', label: 'In Procurement', icon: '🛒' },
+                            { id: 'history', label: 'History', icon: '📜' },
+                            { id: 'all', label: 'All Requests', icon: '🔍' },
+                        ].map(f => (
+                            <button
+                                key={f.id}
+                                className="request-subfilter-btn"
+                                onClick={() => setRequestFilter(f.id)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: '0.5rem 0',
+                                    fontSize: '0.88rem',
+                                    fontWeight: requestFilter === f.id ? 800 : 600,
+                                    color: requestFilter === f.id ? 'var(--text)' : 'var(--text-muted)',
+                                    cursor: 'pointer',
+                                    position: 'relative',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    transition: 'all 0.2s ease',
+                                }}
+                            >
+                                <span>{f.icon}</span>
+                                {f.label}
+                                {requestFilter === f.id && (
                                     <div style={{
-                                        maxHeight: isExpanded ? '1000px' : '0',
-                                        overflow: 'hidden',
-                                        transition: 'max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
-                                        opacity: isExpanded ? 1 : 0
-                                    }}>
-                                        <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.75rem', paddingTop: '0.75rem' }}>
-                                            <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
-                                                Timeline
-                                            </div>
-                                            <RequestTimeline request={r} />
-                                            {r.assignedAsset && (
-                                                <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.875rem', background: '#10b98112', borderRadius: 'var(--radius-sm)', border: '1px solid #10b98140' }}>
-                                                    <div style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700, marginBottom: '0.2rem' }}>✅ Asset Assigned</div>
-                                                    <div style={{ fontWeight: 600 }}>{r.assignedAsset.name}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{r.assignedAsset.serialNumber}</div>
-                                                </div>
-                                            )}
-                                        </div>
+                                        position: 'absolute',
+                                        bottom: -2,
+                                        left: 0,
+                                        right: 0,
+                                        height: 3,
+                                        background: 'var(--primary)',
+                                        borderRadius: 99,
+                                        boxShadow: '0 2px 4px var(--primary-glow)',
+                                    }} />
+                                )}
+                            </button>
+                        ))}
+                    </div>
+
+                    {(() => {
+                        const filtered = myRequests.filter(r => {
+                            if (requestFilter === 'pending') return ['pending_manager', 'pending_store'].includes(r.status);
+                            if (requestFilter === 'active') return r.status === 'purchase_requested';
+                            if (requestFilter === 'history') return ['assigned', 'rejected'].includes(r.status);
+                            return true;
+                        });
+
+                        if (filtered.length === 0) {
+                            return (
+                                <div className="premium-card" style={{ padding: '3rem 1.5rem' }}>
+                                    <div className="empty-state">
+                                        <span className="empty-icon">
+                                            {requestFilter === 'active' ? '✨' : requestFilter === 'history' ? '📂' : '📋'}
+                                        </span>
+                                        <h3 style={{ fontWeight: 800 }}>No {requestFilter} requests</h3>
+                                        <p style={{ maxWidth: 300, margin: '0.5rem auto 0' }}>
+                                            {requestFilter === 'active'
+                                                ? 'You have no ongoing requests. Your active procurements will appear here.'
+                                                : "You haven't completed or rejected any requests yet."}
+                                        </p>
                                     </div>
                                 </div>
                             );
-                        })}
-                    </div>
-                )
+                        }
+
+                        return (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {filtered.map(r => {
+                                    const sm = STATUS_META[r.status] || { label: r.status, color: '#6366f1', icon: '●' };
+                                    const um = URGENCY_META[r.urgency];
+                                    const isExpanded = expandedRequest === r._id;
+                                    return (
+                                        <div key={r._id} className="premium-card request-card" style={{ padding: '1.25rem 1.5rem', cursor: 'pointer' }}
+                                            onClick={() => setExpandedRequest(isExpanded ? null : r._id)}>
+                                            <div className="request-card-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem' }}>
+                                                <div className="request-card-body" style={{ flex: 1 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                                                        <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>{r.assetCategory}</span>
+                                                        <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '3px 10px', borderRadius: 999, background: um?.bg, color: um?.color, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{um?.label} Priority</span>
+
+                                                        {r.status !== 'assigned' && r.status !== 'rejected' && isDelayed(r.createdAt) && (
+                                                            <span style={{
+                                                                fontSize: '0.7rem',
+                                                                fontWeight: 800,
+                                                                padding: '3px 10px',
+                                                                borderRadius: 999,
+                                                                background: '#fff1f2',
+                                                                color: '#e11d48',
+                                                                border: '1px solid #fda4af',
+                                                                textTransform: 'uppercase',
+                                                                letterSpacing: '0.05em',
+                                                                animation: 'pulse 2s infinite'
+                                                            }}>
+                                                                ⚠️ Delayed / Attention Needed
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', lineHeight: 1.5 }}>{r.assetDescription}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                                                        Submitted {new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                                    </div>
+                                                    <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                                        {sm.icon !== '●' && <span style={{ fontSize: '1.25rem' }}>{sm.icon}</span>}
+                                                        <span style={{ fontWeight: 700, color: sm.color }}>{sm.label}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="request-card-status" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem', flexShrink: 0 }}>
+                                                    <span style={{ fontSize: '0.8rem', fontWeight: 700, padding: '6px 14px', borderRadius: 999, background: `${sm.color}15`, color: sm.color, display: 'flex', alignItems: 'center', gap: '0.4em' }}>
+                                                        {sm.icon} {sm.label}
+                                                    </span>
+                                                    {r.managerNote && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: 200, textAlign: 'right' }}>Note: {r.managerNote}</span>}
+                                                </div>
+                                            </div>
+                                            <div style={{
+                                                maxHeight: isExpanded ? '1000px' : '0',
+                                                overflow: 'hidden',
+                                                transition: 'max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                                                opacity: isExpanded ? 1 : 0
+                                            }}>
+                                                <div style={{ borderTop: '1px solid var(--border)', marginTop: '0.75rem', paddingTop: '0.75rem' }}>
+                                                    <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
+                                                        Timeline
+                                                    </div>
+                                                    <RequestTimeline request={r} />
+                                                    {r.assignedAsset && (
+                                                        <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.875rem', background: '#10b98112', borderRadius: 'var(--radius-sm)', border: '1px solid #10b98140' }}>
+                                                            <div style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700, marginBottom: '0.2rem' }}>✅ Asset Assigned</div>
+                                                            <div style={{ fontWeight: 600 }}>{r.assignedAsset.name}</div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{r.assignedAsset.serialNumber}</div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })()}
+                </>
             )}
 
-            {
-                showRequestModal && (
-                    <RequestFormModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} />
-                )
-            }
-        </div >
+            {showRequestModal && (
+                <RequestFormModal onClose={() => setShowRequestModal(false)} onSuccess={fetchData} />
+            )}
+        </div>
     );
 }

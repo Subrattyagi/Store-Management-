@@ -19,7 +19,7 @@ const assignmentSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['issued', 'return_requested', 'returned', 'transferred'],
+            enum: ['issued', 'return_requested', 'returned', 'transferred', 'lost'],
             default: 'issued',
         },
         transferNote: {

@@ -7,7 +7,7 @@ const { authorize } = require('../middleware/rbac');
 router.use(protect);
 
 router.get('/pending-count', authorize('manager', 'store_manager'), c.getPendingCount);
-router.post('/', authorize('employee'), c.createRequest);
+router.post('/', authorize('employee', 'manager'), c.createRequest);
 router.get('/', c.getRequests);
 router.get('/:id', c.getRequest);
 router.patch('/:id/approve', authorize('manager'), c.approveRequest);

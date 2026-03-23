@@ -166,10 +166,11 @@ export default function Allocations() {
 
     if (loading) return <div className="loading"><div className="spinner" /></div>;
 
-    // Separate return-requested and lost from the rest
-    const returnRequested = assignments.filter(a => a.status === 'return_requested');
-    const lostAssets = assignments.filter(a => a.status === 'returned' && a.asset?.status === 'lost');
-    const activeAssignments = assignments.filter(a => !['return_requested'].includes(a.status));
+    // Filter out returned/lost assets and return requests from the allocations view
+    const activeAssignments = assignments.filter(a =>
+        a.status !== 'return_requested' &&
+        !(a.status === 'returned' && a.asset?.status === 'lost')
+    );
 
     return (
         <div>
@@ -179,16 +180,6 @@ export default function Allocations() {
                     <p>Manage all active assignments and issue new assets</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                    {returnRequested.length > 0 && (
-                        <span className="badge badge-return_requested">
-                            <span className="badge-dot" />{returnRequested.length} Return{returnRequested.length > 1 ? 's' : ''} Pending
-                        </span>
-                    )}
-                    {lostAssets.length > 0 && (
-                        <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 10px', borderRadius: 999, background: '#ef444415', color: '#ef4444', border: '1px solid #ef444430' }}>
-                            ⚠ {lostAssets.length} Lost
-                        </span>
-                    )}
                     <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                         Issue Asset
@@ -196,69 +187,7 @@ export default function Allocations() {
                 </div>
             </div>
 
-            {/* ── Return Requests Alert Banner ── */}
-            {returnRequested.length > 0 && (
-                <div style={{ background: '#f59e0b10', border: '1.5px solid #f59e0b40', borderRadius: 'var(--radius)', padding: '1rem 1.25rem', marginBottom: '1.25rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                        <span style={{ fontSize: '1rem' }}>🔄</span>
-                        <span style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.9rem' }}>Return Requests — Action Required</span>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>· These assets are on their way back to the Store Manager for inspection</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {returnRequested.map(a => {
-                            const initials = a.employee?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-                            return (
-                                <div key={a._id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--bg)', borderRadius: 'var(--radius-sm)', padding: '0.6rem 0.875rem', border: '1px solid var(--border)' }}>
-                                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#818cf8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '0.72rem', flexShrink: 0 }}>{initials}</div>
-                                    <div style={{ flex: 1 }}>
-                                        <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{a.employee?.name}</span>
-                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}> · {a.employee?.department}</span>
-                                        <span style={{ margin: '0 0.4rem', color: 'var(--text-muted)' }}>→</span>
-                                        <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{a.asset?.name}</span>
-                                        <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', background: 'var(--bg-secondary)', padding: '1px 5px', borderRadius: 3, marginLeft: '0.4rem', color: 'var(--text-secondary)' }}>{a.asset?.serialNumber}</span>
-                                    </div>
-                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                                        Requested {new Date(a.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                                    </span>
-                                    <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 700, padding: '2px 8px', background: '#f59e0b15', borderRadius: 999 }}>
-                                        ⏳ Awaiting Store Verification
-                                    </span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
 
-            {/* ── Lost Assets Alert Banner ── */}
-            {lostAssets.length > 0 && (
-                <div style={{ background: '#ef444410', border: '1.5px solid #ef444440', borderRadius: 'var(--radius)', padding: '1rem 1.25rem', marginBottom: '1.25rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                        <span style={{ fontSize: '1rem' }}>⚠️</span>
-                        <span style={{ fontWeight: 700, color: '#ef4444', fontSize: '0.9rem' }}>Lost Asset Reports</span>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>· Reported by employees — please take necessary action</span>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {lostAssets.map(a => {
-                            const initials = a.employee?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-                            return (
-                                <div key={a._id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--bg)', borderRadius: 'var(--radius-sm)', padding: '0.6rem 0.875rem', border: '1px solid var(--border)' }}>
-                                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#ef4444,#f87171)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: '0.72rem', flexShrink: 0 }}>{initials}</div>
-                                    <div style={{ flex: 1 }}>
-                                        <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{a.employee?.name}</span>
-                                        <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}> · {a.employee?.department}</span>
-                                        <span style={{ margin: '0 0.4rem', color: 'var(--text-muted)' }}>→</span>
-                                        <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{a.asset?.name}</span>
-                                        <span style={{ fontFamily: 'monospace', fontSize: '0.72rem', background: 'var(--bg-secondary)', padding: '1px 5px', borderRadius: 3, marginLeft: '0.4rem', color: 'var(--text-secondary)' }}>{a.asset?.serialNumber}</span>
-                                        {a.notes && <div style={{ fontSize: '0.72rem', color: '#ef4444', fontStyle: 'italic', marginTop: '0.15rem' }}>"{a.notes}"</div>}
-                                    </div>
-                                    <span style={{ fontSize: '0.72rem', color: '#ef4444', fontWeight: 700, padding: '2px 8px', background: '#ef444415', borderRadius: 999 }}>Lost</span>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
 
             {/* ── All Assignments Table ── */}
             <div className="table-wrapper">
@@ -274,20 +203,15 @@ export default function Allocations() {
                         </tr>
                     </thead>
                     <tbody>
-                        {assignments.length === 0 ? (
-                            <tr><td colSpan="5"><div className="empty-state"><span className="empty-icon">📋</span><h3>No allocations yet</h3><p>Issue an asset to an employee to get started.</p></div></td></tr>
-                        ) : assignments.map((a) => {
+                        {activeAssignments.length === 0 ? (
+                            <tr><td colSpan="6"><div className="empty-state"><span className="empty-icon">📋</span><h3>No active allocations</h3><p>Issue an asset to an employee to get started.</p></div></td></tr>
+                        ) : activeAssignments.map((a) => {
                             const initials = a.employee?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
-                            const isAlert = a.status === 'return_requested';
-                            const isLost = a.status === 'returned' && a.asset?.status === 'lost';
                             return (
-                                <tr key={a._id} style={{
-                                    background: isAlert ? '#f59e0b08' : isLost ? '#ef444408' : '',
-                                    borderLeft: isAlert ? '3px solid #f59e0b' : isLost ? '3px solid #ef4444' : '3px solid transparent',
-                                }}>
+                                <tr key={a._id} style={{ borderLeft: '3px solid transparent' }}>
                                     <td>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
-                                            <div style={{ width: 30, height: 30, borderRadius: '50%', background: `linear-gradient(135deg,${isLost ? '#ef4444,#f87171' : '#6366f1,#818cf8'})`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.72rem', flexShrink: 0 }}>
+                                            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#818cf8)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: '0.72rem', flexShrink: 0 }}>
                                                 {initials}
                                             </div>
                                             <div>

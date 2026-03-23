@@ -19,7 +19,7 @@ const populate = (q) =>
 
 // @desc   Employee creates an asset request
 // @route  POST /api/asset-requests
-// @access Private (employee)
+// @access Private (employee, manager)
 exports.createRequest = [
     body('assetCategory').trim().notEmpty().withMessage('Asset category is required'),
     body('assetDescription').trim().notEmpty().withMessage('Description is required'),
@@ -27,25 +27,43 @@ exports.createRequest = [
     handleValidationErrors,
     asyncHandler(async (req, res) => {
         const { assetCategory, assetDescription, urgency } = req.body;
+        const isManager = req.user.role === 'manager';
 
         const request = await AssetRequest.create({
             requestedBy: req.user._id,
             assetCategory,
             assetDescription,
             urgency: urgency || 'medium',
-            timeline: [{ status: 'pending_manager', note: 'Request submitted by employee', by: req.user._id }],
+            status: isManager ? 'pending_store' : 'pending_manager',
+            reviewedBy: isManager ? req.user._id : undefined,
+            timeline: [{
+                status: isManager ? 'pending_store' : 'pending_manager',
+                note: isManager ? 'Request submitted and auto-approved by manager' : 'Request submitted by employee',
+                by: req.user._id
+            }],
         });
 
         const populated = await populate(AssetRequest.findById(request._id));
 
-        // Notify all managers about new pending request
-        await notifyRole({
-            role: 'manager',
-            type: 'asset_request_created',
-            title: 'New Asset Request',
-            message: `${req.user.name} requested a ${assetCategory}`,
-            link: '/manager/asset-requests',
-        });
+        if (isManager) {
+            // Notify store managers about the new request
+            await notifyRole({
+                role: 'store_manager',
+                type: 'asset_request_created',
+                title: 'Manager Asset Request',
+                message: `${req.user.name} (Manager) requested a ${assetCategory}`,
+                link: '/store-manager/asset-requests',
+            });
+        } else {
+            // Notify all managers about new pending request
+            await notifyRole({
+                role: 'manager',
+                type: 'asset_request_created',
+                title: 'New Asset Request',
+                message: `${req.user.name} requested a ${assetCategory}`,
+                link: '/manager/asset-requests',
+            });
+        }
 
         res.status(201).json({ status: 'success', data: { request: populated } });
     }),
@@ -60,11 +78,15 @@ exports.getRequests = asyncHandler(async (req, res) => {
     if (req.user.role === 'employee') {
         filter.requestedBy = req.user._id;
     } else if (req.user.role === 'manager') {
-        // Manager sees all pending their approval + ones they've already reviewed
-        if (req.query.status) filter.status = req.query.status;
-        else filter.status = { $in: ['pending_manager'] };
-        // Show all if 'all' query
-        if (req.query.all === 'true') delete filter.status;
+        if (req.query.myRequests === 'true') {
+            filter.requestedBy = req.user._id;
+        } else {
+            // Manager sees all pending their approval + ones they've already reviewed
+            if (req.query.status) filter.status = req.query.status;
+            else filter.status = { $in: ['pending_manager'] };
+            // Show all if 'all' query
+            if (req.query.all === 'true') delete filter.status;
+        }
     } else if (req.user.role === 'store_manager') {
         filter.status = { $in: ['pending_store', 'purchase_requested'] };
         if (req.query.status) filter.status = req.query.status;

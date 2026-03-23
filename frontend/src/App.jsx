@@ -8,6 +8,7 @@ import { ProtectedRoute, RoleRoute, ROLE_DASHBOARDS_MAP } from './routes/Protect
 // Layout
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import EmployeeLayout from './components/EmployeeLayout';
 
 // Pages
 import Login from './pages/auth/Login';
@@ -81,7 +82,14 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
 
-            {/* Protected Routes with Sidebar Layout */}
+            {/* Employee Routes with Custom Mobile Layout */}
+            <Route element={<ProtectedRoute><RoleRoute roles={['employee']}><EmployeeLayout /></RoleRoute></ProtectedRoute>}>
+              <Route path="/employee/assets" element={<MyAssets />} />
+              <Route path="/employee/issues" element={<EmployeeIssues />} />
+              <Route path="/employee/exit-status" element={<ExitStatus />} />
+            </Route>
+
+            {/* Standard Protected Routes with Desktop Sidebar Layout */}
             <Route element={<ProtectedRoute><ProtectedLayout /></ProtectedRoute>}>
 
               {/* Default Redirect based on role (handled inside RoleRoute conditionally) */}
@@ -90,12 +98,7 @@ export default function App() {
               {/* Universal Common Routes */}
               <Route path="/profile" element={<Profile />} />
 
-              {/* Employee Routes */}
-              <Route path="/employee">
-                <Route path="assets" element={<RoleRoute roles={['employee']}><MyAssets /></RoleRoute>} />
-                <Route path="issues" element={<RoleRoute roles={['employee']}><EmployeeIssues /></RoleRoute>} />
-                <Route path="exit-status" element={<RoleRoute roles={['employee']}><ExitStatus /></RoleRoute>} />
-              </Route>
+
 
               {/* Store Manager Routes */}
               <Route path="/store-manager">

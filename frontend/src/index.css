@@ -1,8 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@600;700;800&display=swap');
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    DESIGN TOKENS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 :root {
   /* Colors */
   --bg: #ffffff;
@@ -38,7 +38,7 @@
   --info: #3b82f6;
   --info-light: #eff6ff;
 
-  /* Sidebar — Golden Black Theme */
+  /* Sidebar â€” Golden Black Theme */
   --sidebar-w: 260px;
   --sidebar-w-collapsed: 80px;
   --sidebar-bg: #0a0a0a;
@@ -73,9 +73,9 @@
   --t-slow: 0.35s;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    RESET & BASE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 *,
 *::before,
 *::after {
@@ -100,9 +100,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    LAYOUT
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .app-layout {
   display: flex;
   min-height: 100vh;
@@ -112,7 +112,7 @@ body {
 .main-wrapper {
   flex: 1;
   min-width: 0;
-  /* ← critical: prevents flex child from growing past viewport */
+  /* â† critical: prevents flex child from growing past viewport */
   overflow-x: hidden;
   margin-left: var(--sidebar-w);
   display: flex;
@@ -152,9 +152,9 @@ body {
   }
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    MODERN GLASSMORPHISM & UTILITIES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .glass-panel {
   background: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(16px);
@@ -186,15 +186,15 @@ body {
 }
 
 .premium-card:hover {
-  /* ⚠️ DO NOT add transform here — it creates a stacking context that breaks
+  /* âš ï¸ DO NOT add transform here â€” it creates a stacking context that breaks
      position:fixed children (e.g. dropdown menus). Use shadow-only elevation. */
   box-shadow: 0 4px 20px rgba(15, 23, 42, 0.10), 0 1px 4px rgba(15, 23, 42, 0.06);
   border-color: rgba(148, 163, 184, 0.5);
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   SIDEBAR — GOLDEN BLACK GLOSSY THEME
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+   SIDEBAR â€” GOLDEN BLACK GLOSSY THEME
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 @keyframes goldShimmer {
   0% {
     background-position: -200% center;
@@ -282,7 +282,7 @@ body {
   right: calc((var(--sidebar-w-collapsed) - 28px) / 2);
 }
 
-/* ─── Logo Section ─── */
+/* â”€â”€â”€ Logo Section â”€â”€â”€ */
 .sidebar-logo {
   padding: 0;
   border-bottom: 1px solid rgba(212, 175, 55, 0.15);
@@ -300,7 +300,7 @@ body {
   align-items: center;
 }
 
-/* ─── Full logo (expanded) ─── */
+/* â”€â”€â”€ Full logo (expanded) â”€â”€â”€ */
 .brand-logo-wrap {
   width: 100%;
   position: relative;
@@ -383,7 +383,7 @@ body {
   white-space: nowrap;
 }
 
-/* ─── Collapsed mini atom ─── */
+/* â”€â”€â”€ Collapsed mini atom â”€â”€â”€ */
 .brand-logo-mini {
   display: none;
 }
@@ -422,7 +422,7 @@ body {
   display: none;
 }
 
-/* ─── Navigation ─── */
+/* â”€â”€â”€ Navigation â”€â”€â”€ */
 .sidebar-nav {
   flex: 1;
   padding: 0.875rem 0.75rem;
@@ -562,7 +562,7 @@ body {
   opacity: 1;
 }
 
-/* ─── Footer ─── */
+/* â”€â”€â”€ Footer â”€â”€â”€ */
 .sidebar-footer {
   padding: 0.875rem;
   border-top: 1px solid rgba(212, 175, 55, 0.18);
@@ -681,9 +681,9 @@ body {
   box-shadow: 0 0 12px rgba(239, 68, 68, 0.15);
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    PAGE HEADER
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .page-header {
   margin-bottom: 1.75rem;
   display: flex;
@@ -722,9 +722,9 @@ body {
   font-size: 0.875rem;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    CARDS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -841,9 +841,9 @@ body {
   font-weight: 500;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    TABLES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .table-wrapper {
   overflow-x: auto;
   border-radius: var(--radius);
@@ -890,9 +890,9 @@ body {
   background: var(--bg-secondary);
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    BADGES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -977,7 +977,7 @@ body {
   background: var(--info);
 }
 
-/* ── Minor Damage: amber ── */
+/* â”€â”€ Minor Damage: amber â”€â”€ */
 .badge-minor_damage {
   background: #fffbeb;
   color: #d97706;
@@ -987,7 +987,7 @@ body {
   background: #f59e0b;
 }
 
-/* ── Major Damage: orange ── */
+/* â”€â”€ Major Damage: orange â”€â”€ */
 .badge-major_damage {
   background: #fff7ed;
   color: #c2410c;
@@ -997,7 +997,7 @@ body {
   background: #f97316;
 }
 
-/* ── Retired: muted red/grey ── */
+/* â”€â”€ Retired: muted red/grey â”€â”€ */
 .badge-retired {
   background: #fef2f2;
   color: #991b1b;
@@ -1071,7 +1071,7 @@ body {
   background: #94a3b8;
 }
 
-/* ── Transferred: purple tones ── */
+/* â”€â”€ Transferred: purple tones â”€â”€ */
 .badge-transferred {
   background: #f5f3ff;
   color: #6d28d9;
@@ -1117,9 +1117,9 @@ body {
   background: #a855f7;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    BUTTONS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -1220,9 +1220,9 @@ body {
   border-radius: var(--radius-sm);
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    FORMS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .form-group {
   margin-bottom: 1.125rem;
 }
@@ -1272,9 +1272,9 @@ body {
   min-height: 90px;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    MODAL
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -1381,9 +1381,9 @@ body {
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    LOGIN PAGE (Premium Dark & Gold Theme)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .login-page {
   min-height: 100vh;
   display: flex;
@@ -1673,9 +1673,9 @@ body {
   text-overflow: ellipsis;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    ALERTS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .alert {
   padding: 0.75rem 1rem;
   border-radius: var(--radius-sm);
@@ -1711,9 +1711,9 @@ body {
   color: #d97706;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    FILTERS BAR
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .filters-bar {
   display: flex;
   gap: 0.625rem;
@@ -1732,9 +1732,9 @@ body {
   min-width: 220px;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    EMPTY STATE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .empty-state {
   text-align: center;
   padding: 3.5rem 2rem;
@@ -1759,9 +1759,9 @@ body {
   color: var(--text-muted);
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    LOADING / SPINNER
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .loading {
   display: flex;
   align-items: center;
@@ -1784,9 +1784,9 @@ body {
   }
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    ASSET CARDS (Employee view)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .asset-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -1874,9 +1874,9 @@ body {
   gap: 0.5rem;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    CLEARANCE / TIMELINE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .clearance-timeline {
   display: flex;
   flex-direction: column;
@@ -1957,9 +1957,9 @@ body {
   color: var(--text-muted);
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    ACTION CARDS (Returns, Approvals)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .action-cards {
   display: flex;
   flex-direction: column;
@@ -2010,9 +2010,9 @@ body {
   flex-shrink: 0;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    AUDIT LOG TIMELINE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .audit-timeline {
   display: flex;
   flex-direction: column;
@@ -2065,9 +2065,9 @@ body {
   margin-top: 0.2rem;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    USER CARDS (Roles page)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .user-list {
   display: flex;
   flex-direction: column;
@@ -2124,9 +2124,9 @@ body {
   text-overflow: ellipsis;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    SECTION HEADER (card title bar)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .section-header {
   display: flex;
   align-items: center;
@@ -2149,9 +2149,9 @@ body {
   margin-top: 0.125rem;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    CHART WRAPPER
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .chart-card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -2160,9 +2160,9 @@ body {
   box-shadow: var(--shadow-xs);
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    RESPONSIVE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 @media (max-width: 1024px) {
   .login-branding {
     display: none;
@@ -2200,9 +2200,9 @@ body {
   }
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
    TOP BAR
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .topbar {
   height: 60px;
   background: #ffffff;
@@ -2246,7 +2246,7 @@ body {
   flex-shrink: 0;
 }
 
-/* ─── Bell button ─── */
+/* â”€â”€â”€ Bell button â”€â”€â”€ */
 .topbar-notif-wrap {
   position: relative;
 }
@@ -2295,7 +2295,7 @@ body {
   font-family: 'Outfit', sans-serif;
 }
 
-/* ─── Dropdown panel — anchors from header ─── */
+/* â”€â”€â”€ Dropdown panel â€” anchors from header â”€â”€â”€ */
 .topbar-notif-dropdown {
   position: absolute;
   top: calc(100% + 10px);
@@ -2325,7 +2325,7 @@ body {
   }
 }
 
-/* ─── Footer row inside dropdown ─── */
+/* â”€â”€â”€ Footer row inside dropdown â”€â”€â”€ */
 .topbar-notif-footer {
   padding: 0.625rem 1rem;
   border-top: 1px solid var(--border);
@@ -2335,7 +2335,7 @@ body {
   background: var(--bg-secondary);
 }
 
-/* ─── User chip in topbar ─── */
+/* â”€â”€â”€ User chip in topbar â”€â”€â”€ */
 .topbar-user-chip {
   display: flex;
   align-items: center;
@@ -2379,9 +2379,9 @@ body {
   white-space: nowrap;
 }
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   NOTIFICATION BELL (sidebar legacy — can be cleaned up later)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+   NOTIFICATION BELL (sidebar legacy â€” can be cleaned up later)
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
 .notif-bell-wrap {
   position: relative;
   width: 100%;
@@ -2492,7 +2492,7 @@ body {
   display: none;
 }
 
-/* ─── Dropdown Panel ─── */
+/* â”€â”€â”€ Dropdown Panel â”€â”€â”€ */
 .notif-dropdown {
   position: fixed;
   bottom: calc(100px);
@@ -2573,7 +2573,7 @@ body {
   border-radius: 2px;
 }
 
-/* ─── Individual notification item ─── */
+/* â”€â”€â”€ Individual notification item â”€â”€â”€ */
 .notif-item {
   display: flex;
   align-items: flex-start;
@@ -2653,7 +2653,7 @@ body {
   box-shadow: 0 0 6px rgba(99, 102, 241, 0.5);
 }
 
-/* ─── Empty state ─── */
+/* â”€â”€â”€ Empty state â”€â”€â”€ */
 .notif-empty {
   display: flex;
   flex-direction: column;
@@ -2667,4 +2667,323 @@ body {
   font-size: 0.82rem;
   color: var(--text-muted);
   font-weight: 500;
+}
+
+/* â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+   MOBILE EMPLOYEE LAYOUT â€” Clean & Premium
+   Based on Stitch design: Indigo, Manrope/Inter
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â” */
+
+/* â”€â”€â”€ Bottom nav: always in DOM, hidden on desktop â”€â”€â”€ */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+
+  /* â”€â”€â”€ Hide sidebar entirely on mobile â”€â”€â”€ */
+  .sidebar {
+    transform: translateX(-100%);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /* â”€â”€â”€ Remove sidebar offset from main-wrapper â”€â”€â”€ */
+  .main-wrapper {
+    margin-left: 0 !important;
+  }
+
+  /* â”€â”€â”€ Body: no horizontal overflow â”€â”€â”€ */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* â”€â”€â”€ Top bar: compact mobile header â”€â”€â”€ */
+  .topbar {
+    padding: 0 1rem !important;
+    height: 58px !important;
+    min-height: 58px !important;
+  }
+
+  .topbar-greeting {
+    font-size: 0.88rem !important;
+  }
+
+  /* â”€â”€â”€ Main content area: respects bottom nav â”€â”€â”€ */
+  .main-content {
+    padding: 1rem !important;
+    padding-bottom: 80px !important;
+    /* above bottom nav */
+  }
+
+  /* Slightly more breathing room for employee pages */
+  .main-content.employee-page {
+    padding-bottom: 84px !important;
+  }
+
+  /* â”€â”€â”€ Page header: stack on mobile â”€â”€â”€ */
+  .page-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .page-header-left h1,
+  .page-header h1 {
+    font-size: 1.3rem !important;
+  }
+
+  .page-header .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* â”€â”€â”€ Asset cards: single column â”€â”€â”€ */
+  .asset-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  /* â”€â”€â”€ Stat grid: 2 columns â”€â”€â”€ */
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.65rem !important;
+  }
+
+  .stat-card {
+    padding: 1rem !important;
+  }
+
+  .stat-value {
+    font-size: 1.5rem !important;
+  }
+
+  /* â”€â”€â”€ Cards: rounded, clean â”€â”€â”€ */
+  .premium-card {
+    border-radius: 16px !important;
+  }
+
+  /* â”€â”€â”€ Modals: slide up as bottom sheets â”€â”€â”€ */
+  .glass-modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .glass-modal-overlay .modal.premium-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    margin: 0 !important;
+  }
+
+  /* â”€â”€â”€ Touch targets â”€â”€â”€ */
+  .btn {
+    min-height: 44px !important;
+  }
+
+  .btn-sm {
+    min-height: 40px !important;
+    font-size: 0.82rem !important;
+  }
+
+  /* â”€â”€â”€ Pill tab: full width â”€â”€â”€ */
+  .glass-panel {
+    width: 100% !important;
+  }
+
+  /* â”€â”€â”€ Inputs: no iOS zoom â”€â”€â”€ */
+  .form-input,
+  .form-select {
+    font-size: 16px !important;
+  }
+
+  /* â”€â”€â”€ Tables â”€â”€â”€ */
+  .data-table {
+    font-size: 0.78rem !important;
+  }
+
+  /* â”€â”€â”€ Notification panel â”€â”€â”€ */
+  .topbar-notif-dropdown {
+    position: fixed !important;
+    top: 58px !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    border-radius: 0 0 16px 16px !important;
+    max-height: calc(100vh - 58px) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1) !important;
+    z-index: 1000 !important;
+    margin: 0 !important;
+    overflow-y: auto !important;
+  }
+
+  /* â”€â”€â”€ Show mobile bottom nav â”€â”€â”€ */
+  .mobile-bottom-nav {
+    display: flex;
+  }
+}
+
+/* â”€â”€â”€ Mobile Bottom Navigation Bar â”€â”€â”€ */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  z-index: 999;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(226, 232, 240, 0.7);
+  box-shadow: 0 -2px 20px rgba(15, 23, 42, 0.06);
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 0.5rem;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* iOS safe area */
+@supports (padding: max(0px)) {
+  .mobile-bottom-nav {
+    height: calc(64px + env(safe-area-inset-bottom));
+    padding-bottom: max(env(safe-area-inset-bottom), 4px);
+  }
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  padding: 0.5rem 0.25rem;
+  border-radius: 12px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #94a3b8;
+  position: relative;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav-item.active {
+  color: #4f46e5;
+}
+
+.mobile-nav-item:active {
+  transform: scale(0.9);
+}
+
+.mobile-nav-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.mobile-nav-item.active .mobile-nav-icon {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.mobile-nav-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.mobile-nav-indicator {
+  position: absolute;
+  top: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  border-radius: 0 0 4px 4px;
+  background: linear-gradient(90deg, #3525cd, #4f46e5);
+}
+
+/* â”€â”€â”€ FAB: Floating Action Button â”€â”€â”€ */
+.mobile-fab {
+  position: fixed;
+  bottom: 80px;
+  right: 1.25rem;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #3525cd, #4f46e5);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+  z-index: 990;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-fab:active {
+  transform: scale(0.9);
+}
+
+@media (max-width: 768px) {
+  .mobile-fab {
+    display: flex;
+  }
+}
+
+/* ─── My Requests Mobile Tab ─── */
+.request-subfilters {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding: 0 0.5rem;
+}
+
+@media (max-width: 768px) {
+
+  /* Scrollable filters */
+  .request-subfilters {
+    overflow-x: auto;
+    gap: 1rem;
+    padding-bottom: 6px !important;
+    margin-bottom: 1rem !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .request-subfilters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .request-subfilter-btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* Responsive request cards */
+  .request-card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.85rem !important;
+  }
+
+  .request-card-status {
+    width: 100%;
+    align-items: flex-start !important;
+    flex-direction: row-reverse !important;
+    justify-content: space-between !important;
+    margin-top: 0.25rem;
+  }
 }

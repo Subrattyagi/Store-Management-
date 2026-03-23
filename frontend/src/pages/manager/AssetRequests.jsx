@@ -44,19 +44,22 @@ function NoteModal({ title, placeholder, onConfirm, onClose }) {
 export default function AssetRequests() {
     const [requests, setRequests] = useState([]);
     const [history, setHistory] = useState([]);
+    const [myRequests, setMyRequests] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [tab, setTab] = useState('pending'); // 'pending' | 'history'
+    const [tab, setTab] = useState('pending'); // 'pending' | 'history' | 'my_requests'
     const [noteModal, setNoteModal] = useState(null); // { action: 'approve'|'reject', requestId }
 
     const fetchData = async () => {
         setLoading(true);
         try {
-            const [pendingRes, allRes] = await Promise.all([
+            const [pendingRes, allRes, myRes] = await Promise.all([
                 assetRequestsAPI.getAll({ status: 'pending_manager' }),
                 assetRequestsAPI.getAll({ all: 'true' }),
+                assetRequestsAPI.getAll({ myRequests: 'true' })
             ]);
             setRequests(pendingRes.data.data.requests);
             setHistory(allRes.data.data.requests.filter(r => r.status !== 'pending_manager'));
+            setMyRequests(myRes.data.data.requests);
         } catch {
             toast.error('Failed to load requests');
         } finally {
@@ -84,7 +87,7 @@ export default function AssetRequests() {
 
     if (loading) return <div className="loading"><div className="spinner" /></div>;
 
-    const displayList = tab === 'pending' ? requests : history;
+    const displayList = tab === 'pending' ? requests : tab === 'my_requests' ? myRequests : history;
 
     return (
         <div>
@@ -106,6 +109,7 @@ export default function AssetRequests() {
                 {[
                     { id: 'pending', label: `Pending Approval (${requests.length})` },
                     { id: 'history', label: `Reviewed (${history.length})` },
+                    { id: 'my_requests', label: `My Requests (${myRequests.length})` },
                 ].map(t => (
                     <button key={t.id} onClick={() => setTab(t.id)}
                         style={{
@@ -123,9 +127,9 @@ export default function AssetRequests() {
             {displayList.length === 0 ? (
                 <div className="card">
                     <div className="empty-state">
-                        <span className="empty-icon">{tab === 'pending' ? '🎉' : '📋'}</span>
-                        <h3>{tab === 'pending' ? 'No pending requests' : 'No reviewed requests yet'}</h3>
-                        <p>{tab === 'pending' ? 'All caught up! No asset requests awaiting your approval.' : 'Requests you approve or reject will appear here.'}</p>
+                        <span className="empty-icon">{tab === 'pending' ? '🎉' : tab === 'my_requests' ? '📦' : '📋'}</span>
+                        <h3>{tab === 'pending' ? 'No pending requests' : tab === 'my_requests' ? 'No personal requests' : 'No reviewed requests yet'}</h3>
+                        <p>{tab === 'pending' ? 'All caught up! No asset requests awaiting your approval.' : tab === 'my_requests' ? 'You have not submitted any asset requests for yourself yet. You can do so from the Dashboard.' : 'Requests you approve or reject will appear here.'}</p>
                     </div>
                 </div>
             ) : (
@@ -152,8 +156,10 @@ export default function AssetRequests() {
                                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
                                         <div className="action-card-title" style={{ margin: 0 }}>{r.assetCategory}</div>
                                         <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: um?.bg, color: um?.color }}>{um?.label}</span>
-                                        {tab === 'history' && (
-                                            <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: `${sm.color}15`, color: sm.color }}>{sm.icon} {sm.label}</span>
+                                        {(tab === 'history' || tab === 'my_requests') && (
+                                            <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: `${sm.color}15`, color: sm.color, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                {sm.icon} {sm.label}
+                                            </span>
                                         )}
                                     </div>
                                     <div className="action-card-sub">
