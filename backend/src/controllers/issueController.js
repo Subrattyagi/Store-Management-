@@ -73,7 +73,12 @@ exports.updateIssueStatus = asyncHandler(async (req, res, next) => {
         return next(new AppError('Invalid status', 400));
     }
 
-    const issue = await Issue.findByIdAndUpdate(req.params.id, { status }, {
+    const updates = { status };
+    if (status === 'resolved') {
+        updates.resolvedAt = Date.now();
+    }
+
+    const issue = await Issue.findByIdAndUpdate(req.params.id, updates, {
         new: true,
         runValidators: true
     });

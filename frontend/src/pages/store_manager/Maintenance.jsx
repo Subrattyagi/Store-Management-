@@ -379,19 +379,41 @@ export default function Maintenance() {
             {/* Stat Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                 {[
-                    { label: 'Total Records', value: stats.total, icon: '🗂️', color: '#818cf8' },
-                    { label: 'Pending', value: stats.pending, icon: '⏳', color: '#6366f1' },
-                    { label: 'In Progress', value: stats.in_progress, icon: '🔄', color: '#f59e0b' },
-                    { label: 'Completed', value: stats.completed, icon: '✅', color: '#10b981' },
-                ].map(s => (
-                    <div key={s.label} className="glass-panel stat-card" style={{ padding: '1.25rem', borderRadius: 'var(--radius)' }}>
-                        <div className="stat-icon" style={{ background: `${s.color}18`, color: s.color, width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>{s.icon}</div>
-                        <div className="stat-info">
-                            <div className="stat-value" style={{ color: s.color, fontSize: '1.4rem', fontWeight: 800, lineHeight: 1 }}>{s.value}</div>
-                            <div className="stat-label" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem', fontWeight: 500 }}>{s.label}</div>
+                    { label: 'Total Records', value: stats.total, icon: '🗂️', color: '#64748b', filterId: 'all' },
+                    { label: 'Pending', value: stats.pending, icon: '⏳', color: '#f59e0b', filterId: 'pending' },
+                    { label: 'In Progress', value: stats.in_progress, icon: '🔄', color: '#6366f1', filterId: 'in_progress' },
+                    { label: 'Completed', value: stats.completed, icon: '✅', color: '#10b981', filterId: 'completed' },
+                ].map(s => {
+                    const isActive = statusFilter === s.filterId;
+                    return (
+                        <div key={s.label}
+                            onClick={() => setStatusFilter(s.filterId)}
+                            className="glass-panel stat-card"
+                            style={{
+                                padding: '1.25rem',
+                                borderRadius: 'var(--radius)',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                border: isActive ? `1.5px solid ${s.color}` : '1px solid var(--border)',
+                                background: isActive ? `${s.color}08` : 'var(--bg-secondary)',
+                                transform: isActive ? 'translateY(-2px)' : 'none',
+                                boxShadow: isActive ? `0 4px 12px ${s.color}15` : 'none'
+                            }}
+                            onMouseEnter={e => {
+                                if (!isActive) e.currentTarget.style.transform = 'translateY(-2px)';
+                            }}
+                            onMouseLeave={e => {
+                                if (!isActive) e.currentTarget.style.transform = 'none';
+                            }}
+                        >
+                            <div className="stat-icon" style={{ background: `${s.color}15`, color: s.color, width: 44, height: 44, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem' }}>{s.icon}</div>
+                            <div className="stat-info">
+                                <div className="stat-value" style={{ color: isActive ? s.color : 'var(--text)', fontSize: '1.4rem', fontWeight: 800, lineHeight: 1 }}>{s.value}</div>
+                                <div className="stat-label" style={{ fontSize: '0.75rem', color: isActive ? s.color : 'var(--text-muted)', marginTop: '0.2rem', fontWeight: 600 }}>{s.label}</div>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {/* Filter Bar */}

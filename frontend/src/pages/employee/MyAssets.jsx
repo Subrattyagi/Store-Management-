@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { assignmentsAPI, assetRequestsAPI } from '../../api';
+import { assignmentsAPI, assetRequestsAPI, issuesAPI } from '../../api';
 import StatusBadge from '../../components/StatusBadge';
 import toast from 'react-hot-toast';
 
@@ -233,6 +233,7 @@ function RequestTimeline({ request }) {
 export default function MyAssets() {
     const [assignments, setAssignments] = useState([]);
     const [myRequests, setMyRequests] = useState([]);
+    const [myIssues, setMyIssues] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tab, setTab] = useState('assets'); // 'assets' | 'requests'
     const [requestFilter, setRequestFilter] = useState('pending'); // 'pending' | 'active' | 'history' | 'all'
@@ -250,12 +251,14 @@ export default function MyAssets() {
 
     const fetchData = async () => {
         try {
-            const [aRes, rRes] = await Promise.all([
+            const [aRes, rRes, iRes] = await Promise.all([
                 assignmentsAPI.getAll(),
                 assetRequestsAPI.getAll(),
+                issuesAPI.getMyIssues(),
             ]);
             setAssignments(aRes.data.data.assignments);
             setMyRequests(rRes.data.data.requests);
+            setMyIssues(iRes.data.data.issues);
         } catch {
             toast.error('Failed to load data');
         } finally {
@@ -358,46 +361,62 @@ export default function MyAssets() {
                     </div>
                 ) : (
                     <div className="asset-cards-grid" style={{ gap: '1.5rem' }}>
-                        {assignments.map((a) => (
-                            <div key={a._id} className="premium-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
-                                {/* Glassy glow based on condition */}
-                                <div style={{ position: 'absolute', top: -50, right: -50, width: 100, height: 100, background: a.asset.condition === 'new' ? '#10b98130' : a.asset.condition?.includes('damage') ? '#f59e0b30' : '#6366f130', filter: 'blur(30px)', borderRadius: '50%', pointerEvents: 'none' }} />
+                        {assignments.map((a) => {
+                            const activeIssue = myIssues.find(i => i.asset._id === a.asset._id && ['open', 'in_progress', 'in_maintenance'].includes(i.status));
 
-                                <div className="asset-card-header" style={{ marginBottom: '1.25rem' }}>
-                                    <div className="asset-card-icon" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', width: 48, height: 48, borderRadius: '12px' }}>
-                                        <span style={{ fontSize: '1.5rem' }}>{getIcon(a.asset.category)}</span>
-                                    </div>
-                                    <StatusBadge status={a.status} />
-                                </div>
-                                <div className="asset-card-name" style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.01em', marginBottom: '0.25rem' }}>{a.asset.name}</div>
-                                <div className="asset-card-category" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{a.asset.category}</div>
+                            return (
+                                <div key={a._id} className="premium-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+                                    {/* Glassy glow based on condition */}
+                                    <div style={{ position: 'absolute', top: -50, right: -50, width: 100, height: 100, background: a.asset.condition === 'new' ? '#10b98130' : a.asset.condition?.includes('damage') ? '#f59e0b30' : '#6366f130', filter: 'blur(30px)', borderRadius: '50%', pointerEvents: 'none' }} />
 
-                                <div className="asset-card-meta" style={{ marginTop: '1.5rem', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
-                                    <div className="asset-card-meta-row">
-                                        <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, color: 'var(--text-muted)' }}>Serial No.</span>
-                                        <span style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: '0.85rem' }}>{a.asset.serialNumber}</span>
-                                    </div>
-                                    <div className="asset-card-meta-row">
-                                        <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, color: 'var(--text-muted)' }}>Condition</span>
-                                        <span style={{ fontSize: '0.8rem', color: 'var(--text)', fontWeight: 700, background: 'var(--bg)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>{a.asset.condition || '—'}</span>
-                                    </div>
-                                    <div className="asset-card-meta-row">
-                                        <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, color: 'var(--text-muted)' }}>Issued</span>
-                                        <span style={{ fontSize: '0.8rem', color: 'var(--text)', fontWeight: 700 }}>
-                                            {new Date(a.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                        </span>
-                                    </div>
-                                </div>
-                                {a.status === 'issued' && (
-                                    <>
-                                        <div className="asset-card-actions mobile-asset-card-actions" style={{ marginTop: '1.25rem', gap: '0.75rem' }}>
-                                            <button className="btn btn-warning btn-sm" style={{ flex: 1, background: '#fffbeb', border: '1px solid #fcd34d', color: '#b45309', fontWeight: 600 }} onClick={() => handleReturnRequest(a._id)}>Return Asset</button>
-                                            <button className="btn btn-danger btn-sm" style={{ flex: 1, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontWeight: 600 }} onClick={() => setShowLostModal(a._id)}>Report Lost</button>
+                                    {activeIssue && (
+                                        <div style={{ marginBottom: '1rem', padding: '0.6rem 0.875rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                                            <div style={{ fontSize: '1.1rem', marginTop: '-2px' }}>⚠️</div>
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#b91c1c', letterSpacing: '0.02em', textTransform: 'uppercase' }}>Active Issue Reported</div>
+                                                <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '0.15rem' }}>
+                                                    {activeIssue.issueType} <span style={{ opacity: 0.7, margin: '0 4px' }}>•</span> <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{activeIssue.status.replace('_', ' ')}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </>
-                                )}
-                            </div>
-                        ))}
+                                    )}
+
+                                    <div className="asset-card-header" style={{ marginBottom: '1.25rem' }}>
+                                        <div className="asset-card-icon" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', width: 48, height: 48, borderRadius: '12px' }}>
+                                            <span style={{ fontSize: '1.5rem' }}>{getIcon(a.asset.category)}</span>
+                                        </div>
+                                        <StatusBadge status={a.status} />
+                                    </div>
+                                    <div className="asset-card-name" style={{ fontSize: '1.15rem', fontWeight: 800, letterSpacing: '-0.01em', marginBottom: '0.25rem' }}>{a.asset.name}</div>
+                                    <div className="asset-card-category" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{a.asset.category}</div>
+
+                                    <div className="asset-card-meta" style={{ marginTop: '1.5rem', background: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                                        <div className="asset-card-meta-row">
+                                            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, color: 'var(--text-muted)' }}>Serial No.</span>
+                                            <span style={{ fontWeight: 600, fontFamily: 'monospace', fontSize: '0.85rem' }}>{a.asset.serialNumber}</span>
+                                        </div>
+                                        <div className="asset-card-meta-row">
+                                            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, color: 'var(--text-muted)' }}>Condition</span>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text)', fontWeight: 700, background: 'var(--bg)', padding: '2px 8px', borderRadius: '4px', border: '1px solid var(--border)' }}>{a.asset.condition || '—'}</span>
+                                        </div>
+                                        <div className="asset-card-meta-row">
+                                            <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, color: 'var(--text-muted)' }}>Issued</span>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--text)', fontWeight: 700 }}>
+                                                {new Date(a.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {a.status === 'issued' && (
+                                        <>
+                                            <div className="asset-card-actions mobile-asset-card-actions" style={{ marginTop: '1.25rem', gap: '0.75rem' }}>
+                                                <button className="btn btn-warning btn-sm" style={{ flex: 1, background: '#fffbeb', border: '1px solid #fcd34d', color: '#b45309', fontWeight: 600 }} onClick={() => handleReturnRequest(a._id)}>Return Asset</button>
+                                                <button className="btn btn-danger btn-sm" style={{ flex: 1, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontWeight: 600 }} onClick={() => setShowLostModal(a._id)}>Report Lost</button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            )
+                        })}
                     </div>
                 )
             )}

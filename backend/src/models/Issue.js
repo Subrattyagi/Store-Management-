@@ -31,6 +31,9 @@ const issueSchema = new mongoose.Schema(
             enum: ['open', 'in_progress', 'in_maintenance', 'resolved', 'rejected'],
             default: 'open',
         },
+        resolvedAt: {
+            type: Date,
+        },
     },
     { timestamps: true }
 );

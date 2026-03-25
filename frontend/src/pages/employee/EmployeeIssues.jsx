@@ -75,12 +75,40 @@ function ReportIssueModal({ onClose, onSuccess, assignments }) {
                         </div>
 
                         <div>
-                            <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Attachment Link (Optional)</label>
-                            <input type="url" className="form-input"
-                                placeholder="https://drive.google.com/..."
-                                value={form.attachmentUrl}
-                                onChange={e => setForm({ ...form, attachmentUrl: e.target.value })} disabled={!form.asset} />
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>Provide a link to a screenshot or screen recording if applicable.</div>
+                            <label className="form-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Photo Attachment (Optional)</label>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="form-input"
+                                onChange={(e) => {
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        const reader = new FileReader();
+                                        reader.onloadend = () => {
+                                            setForm({ ...form, attachmentUrl: reader.result });
+                                        };
+                                        reader.readAsDataURL(file);
+                                    } else {
+                                        setForm({ ...form, attachmentUrl: '' });
+                                    }
+                                }}
+                                disabled={!form.asset}
+                                style={{ padding: '0.6rem' }}
+                            />
+                            {form.attachmentUrl && form.attachmentUrl.startsWith('data:image') && (
+                                <div style={{ marginTop: '0.75rem', borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border)', maxWidth: '150px', position: 'relative' }}>
+                                    <img src={form.attachmentUrl} alt="Preview" style={{ width: '100%', display: 'block' }} />
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setForm({ ...form, attachmentUrl: '' });
+                                            document.querySelector('input[type="file"]').value = '';
+                                        }}
+                                        style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(255,255,255,0.8)', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}
+                                    >×</button>
+                                </div>
+                            )}
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>Upload a photo or screenshot showing the issue.</div>
                         </div>
                     </form>
                 </div>
@@ -211,16 +239,31 @@ export default function EmployeeIssues() {
                                 </div>
 
                                 {/* Card Footer */}
-                                <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, color: 'var(--text-muted)' }}>Reported On</div>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: '0.15rem' }}>{new Date(issue.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                                <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', gap: '1rem' }}>
+                                    <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, color: 'var(--text-muted)' }}>Reported On</div>
+                                            <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: '0.15rem' }}>{new Date(issue.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                                        </div>
+                                        {issue.status === 'resolved' && (
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700, color: 'var(--text-muted)' }}>Resolved On</div>
+                                                <div style={{ fontSize: '0.85rem', fontWeight: 600, marginTop: '0.15rem', color: '#10b981' }}>{new Date(issue.resolvedAt || issue.updatedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                                            </div>
+                                        )}
                                     </div>
                                     {issue.attachmentUrl && (
-                                        <a href={issue.attachmentUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: 'var(--bg)', borderRadius: '6px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--primary)'; }}>
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                                            View
-                                        </a>
+                                        issue.attachmentUrl.startsWith('data:image') ? (
+                                            <a href={issue.attachmentUrl} download={`issue_${issue._id}_evidence.jpg`} style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: 'var(--bg)', borderRadius: '6px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--primary)'; }}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                                Download image
+                                            </a>
+                                        ) : (
+                                            <a href={issue.attachmentUrl} target="_blank" rel="noreferrer" style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: 'var(--bg)', borderRadius: '6px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-xs)', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.color = 'var(--accent)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--primary)'; }}>
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                                                View Link
+                                            </a>
+                                        )
                                     )}
                                 </div>
                             </div>
