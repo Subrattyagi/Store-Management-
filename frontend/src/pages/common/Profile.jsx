@@ -55,7 +55,7 @@ export default function Profile() {
         // Simple Phone Validation: 10 digits
         if (formData.phone && !/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
             toast.error('Please enter a valid 10-digit phone number.');
-            return;
+            return; 
         }
 
         setIsSaving(true);

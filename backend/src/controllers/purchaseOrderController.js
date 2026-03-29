@@ -219,6 +219,7 @@ exports.receiveAndAddAsset = [
             purchasePrice,
             assetType,
             notes: assetNotes,
+            brand: assetBrand,
             autoAssign, // boolean — auto-assign to requesting employee
         } = req.body;
 
@@ -228,98 +229,94 @@ exports.receiveAndAddAsset = [
             return next(new AppError(`Serial number ${serialNumber} already exists in inventory`, 400));
         }
 
-        const session = await mongoose.startSession();
-        session.startTransaction();
+        // 1. Create the asset
+        const asset = await Asset.create({
+            name,
+            serialNumber,
+            category,
+            brand: assetBrand || '',
+            condition,
+            location,
+            vendor: vendor || po.vendor,
+            purchasePrice,
+            assetType: assetType || 'movable',
+            notes: assetNotes,
+            status: 'available',
+        });
 
-        try {
-            // 1. Create the asset
-            const [asset] = await Asset.create(
-                [
-                    {
-                        name,
-                        serialNumber,
-                        category,
-                        condition,
-                        location,
-                        vendor: vendor || po.vendor,
-                        purchasePrice,
-                        assetType: assetType || 'movable',
-                        notes: assetNotes,
-                        status: 'available',
-                    },
-                ],
-                { session }
-            );
+        // 2. Link asset to PO
+        po.linkedAsset = asset._id;
+        po.receivedQuantity = 1;
 
-            // 2. Link asset to PO
-            po.linkedAsset = asset._id;
-            po.receivedQuantity = 1; // For single asset POs
-            po.timeline.push({
-                status: 'received',
-                note: `Asset added to inventory: ${name} (${serialNumber})`,
+        // 3. Update brand breakdown if exists
+        if (po.brandBreakdown && po.brandBreakdown.length > 0 && assetBrand) {
+            const match = po.brandBreakdown.find(b => b.brand && b.brand.toLowerCase() === assetBrand.trim().toLowerCase());
+            if (match) {
+                match.receivedQuantity = (match.receivedQuantity || 0) + 1;
+            }
+        }
+
+        po.timeline.push({
+            status: 'received',
+            note: `Asset added to inventory: ${name} (${serialNumber})`,
+            by: req.user._id,
+        });
+
+        await po.save();
+
+        // 3. Optional auto-assign to requesting employee
+        let assignment = null;
+        if (autoAssign && po.linkedAssetRequest && po.linkedAssetRequest.status === 'purchase_requested') {
+            const assetReq = po.linkedAssetRequest;
+            const employeeId = assetReq.requestedBy?._id || assetReq.requestedBy;
+
+            assignment = await Assignment.create({
+                asset: asset._id,
+                employee: employeeId,
+                assignedBy: req.user._id,
+                status: 'issued',
+            });
+
+            asset.status = 'issued';
+            await asset.save();
+
+            assetReq.status = 'assigned';
+            assetReq.assignedAsset = asset._id;
+            assetReq.storeNote = `Auto-assigned after purchase: ${name} (${serialNumber})`;
+            assetReq.timeline.push({
+                status: 'assigned',
+                note: `Assigned via purchase order — ${name} (${serialNumber})`,
                 by: req.user._id,
             });
-            await po.save({ session });
+            await assetReq.save();
 
-            // 3. Optional auto-assign to requesting employee
-            let assignment = null;
-            if (autoAssign && po.linkedAssetRequest && po.linkedAssetRequest.status === 'purchase_requested') {
-                const assetReq = po.linkedAssetRequest;
-                const employeeId = assetReq.requestedBy?._id || assetReq.requestedBy;
-
-                [assignment] = await Assignment.create(
-                    [{ asset: asset._id, employee: employeeId, assignedBy: req.user._id, status: 'issued' }],
-                    { session }
-                );
-
-                asset.status = 'issued';
-                await asset.save({ session });
-
-                assetReq.status = 'assigned';
-                assetReq.assignedAsset = asset._id;
-                assetReq.storeNote = `Auto-assigned after purchase: ${name} (${serialNumber})`;
-                assetReq.timeline.push({
-                    status: 'assigned',
-                    note: `Assigned via purchase order — ${name} (${serialNumber})`,
-                    by: req.user._id,
-                });
-                await assetReq.save({ session });
-
-                // Notify employee
-                await createNotification({
-                    recipient: employeeId,
-                    type: 'asset_request_assigned',
-                    title: 'Asset Assigned to You',
-                    message: `${name} (${serialNumber}) has been assigned to you after procurement`,
-                    link: '/employee/assets',
-                });
-
-                await createAuditLog({
-                    action: `Auto-assigned ${name} to ${assetReq.requestedBy?.name || 'employee'} via purchase order`,
-                    performedBy: req.user._id,
-                    asset: asset._id,
-                    previousStatus: 'available',
-                    newStatus: 'issued',
-                });
-            }
-
-            await session.commitTransaction();
-
-            await createAuditLog({
-                action: `Asset ${name} (${serialNumber}) added to inventory via PO ${po._id}`,
-                performedBy: req.user._id,
-                asset: asset._id,
-                newStatus: asset.status,
+            // Notify employee
+            await createNotification({
+                recipient: employeeId,
+                type: 'asset_request_assigned',
+                title: 'Asset Assigned to You',
+                message: `${name} (${serialNumber}) has been assigned to you after procurement`,
+                link: '/employee/assets',
             });
 
-            const populated = await populate(PurchaseOrder.findById(po._id));
-            res.status(201).json({ status: 'success', data: { purchaseOrder: populated, asset, assignment } });
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally {
-            session.endSession();
+            await createAuditLog({
+                action: `Auto-assigned ${name} to ${assetReq.requestedBy?.name || 'employee'} via purchase order`,
+                performedBy: req.user._id,
+                asset: asset._id,
+                previousStatus: 'available',
+                newStatus: 'issued',
+            });
         }
+
+        await createAuditLog({
+            action: `Asset ${name} (${serialNumber}) added to inventory via PO ${po._id}`,
+            performedBy: req.user._id,
+            asset: asset._id,
+            newStatus: asset.status,
+        });
+
+        const populated = await populate(PurchaseOrder.findById(po._id));
+        res.status(201).json({ status: 'success', data: { purchaseOrder: populated, asset, assignment } });
     }),
 ];
 
@@ -358,24 +355,35 @@ exports.bulkReceiveAndAdd = [
         }
 
         // Check which serials already exist in the DB
-        const existingAssets = await Asset.find({ serialNumber: { $in: submittedSerials } }).select('serialNumber');
-        const existingSerials = new Set(existingAssets.map(a => a.serialNumber));
-        const newAssetDefs = assetDefs.filter(a => !existingSerials.has(a.serialNumber.trim()));
-        const skipped = assetDefs.filter(a => existingSerials.has(a.serialNumber.trim()));
+        const existingAssets = await Asset.find({ serialNumber: { $in: submittedSerials } });
+        const existingSerialsMap = new Map(existingAssets.map(a => [a.serialNumber, a]));
 
-        if (newAssetDefs.length === 0) {
-            return next(new AppError('All serial numbers already exist in inventory', 400));
+        const assetsToLink = []; // Asset IDs that already exist and need to be linked
+        const newAssetDefs = []; // New asset definitions that need to be created
+
+        for (const def of assetDefs) {
+            const sn = def.serialNumber.trim();
+            if (existingSerialsMap.has(sn)) {
+                const asset = existingSerialsMap.get(sn);
+                // Only link if it's NOT already in the PO's linkedAssets
+                if (!po.linkedAssets.some(id => id.toString() === asset._id.toString())) {
+                    assetsToLink.push(asset._id);
+                }
+            } else {
+                newAssetDefs.push(def);
+            }
         }
 
-        const session = await mongoose.startSession();
-        session.startTransaction();
+        let createdCount = 0;
+        let newlyLinkedFromExistingCount = assetsToLink.length;
 
-        try {
-            // Create all new assets in a single transaction
-            const createdAssets = await Asset.create(
+        // 1. Create all new assets
+        if (newAssetDefs.length > 0) {
+            const createdAssets = await Asset.insertMany(
                 newAssetDefs.map(a => ({
                     name: a.name,
                     serialNumber: a.serialNumber.trim(),
+                    brand: a.brand || '',
                     category: a.category,
                     condition: a.condition,
                     location: a.location || '',
@@ -384,54 +392,70 @@ exports.bulkReceiveAndAdd = [
                     assetType: a.assetType || 'movable',
                     notes: a.notes || '',
                     status: 'available',
-                })),
-                { session }
+                }))
             );
-
-            // Link all created assets to the PO
-            const createdIds = createdAssets.map(a => a._id);
-            po.linkedAssets.push(...createdIds);
-
-            // Update received quantity
-            po.receivedQuantity = (po.receivedQuantity || 0) + createdAssets.length;
-
-            // For backward compat: set linkedAsset to the first one if not already set
-            if (!po.linkedAsset && createdAssets.length > 0) {
-                po.linkedAsset = createdAssets[0]._id;
-            }
-
-            po.timeline.push({
-                status: 'received',
-                note: `${createdAssets.length} asset(s) added to inventory (bulk)`,
-                by: req.user._id,
-            });
-
-            await po.save({ session });
-            await session.commitTransaction();
-
-            // Audit log
-            await createAuditLog({
-                action: `Bulk added ${createdAssets.length} assets to inventory via PO ${po._id}`,
-                performedBy: req.user._id,
-            });
-
-            const populated = await populate(PurchaseOrder.findById(po._id));
-
-            res.status(201).json({
-                status: 'success',
-                data: {
-                    purchaseOrder: populated,
-                    created: createdAssets.length,
-                    skipped: skipped.length,
-                    skippedSerials: skipped.map(a => a.serialNumber),
-                },
-            });
-        } catch (err) {
-            await session.abortTransaction();
-            throw err;
-        } finally {
-            session.endSession();
+            createdCount = createdAssets.length;
+            po.linkedAssets.push(...createdAssets.map(a => a._id));
         }
+
+        // 2. Link existing ones (that were not previously linked)
+        if (assetsToLink.length > 0) {
+            po.linkedAssets.push(...assetsToLink);
+        }
+
+        // Update individual brand buckets in brandBreakdown
+        if (po.brandBreakdown && po.brandBreakdown.length > 0) {
+            for (const def of assetDefs) {
+                const brandName = (def.brand || '').trim().toLowerCase();
+                if (!brandName) continue;
+
+                const match = po.brandBreakdown.find(b => b.brand && b.brand.toLowerCase() === brandName);
+                if (match) {
+                    match.receivedQuantity = (match.receivedQuantity || 0) + 1;
+                }
+            }
+        }
+
+        // Update overall received quantity
+        po.receivedQuantity = po.linkedAssets.length;
+
+        // Set linkedAsset to the first one if not already set (for backward compat)
+        if (!po.linkedAsset && po.linkedAssets.length > 0) {
+            po.linkedAsset = po.linkedAssets[0];
+        }
+
+        const totalHandled = createdCount + newlyLinkedFromExistingCount;
+        po.timeline.push({
+            status: 'received',
+            note: `${totalHandled} asset(s) handled (Created: ${createdCount}, Linked Existing: ${newlyLinkedFromExistingCount})`,
+            by: req.user._id,
+        });
+
+        await po.save();
+
+        // Audit log
+        await createAuditLog({
+            action: `Bulk added assets to inventory via PO ${po._id} (Created: ${createdCount}, Linked: ${newlyLinkedFromExistingCount})`,
+            performedBy: req.user._id,
+        });
+
+        // Use doc.populate for better stability in the response
+        await po.populate([
+            { path: 'requestedBy', select: 'name email' },
+            { path: 'linkedAssetRequest', populate: { path: 'requestedBy', select: 'name' } },
+            { path: 'linkedAssets', select: 'name serialNumber category status' },
+            { path: 'timeline.by', select: 'name' }
+        ]);
+
+        res.status(201).json({
+            status: 'success',
+            data: {
+                purchaseOrder: po,
+                created: createdCount,
+                linkedExisting: newlyLinkedFromExistingCount,
+                totalAddedThisRequest: totalHandled
+            },
+        });
     }),
 ];
 

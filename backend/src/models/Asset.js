@@ -25,6 +25,10 @@ const assetSchema = new mongoose.Schema(
             required: [true, 'Category is required'],
             trim: true,
         },
+        brand: {
+            type: String,
+            trim: true,
+        },
         serialNumber: {
             type: String,
             required: [true, 'Serial number is required'],

@@ -1317,8 +1317,12 @@ body {
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 500px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
   box-shadow: var(--shadow-modal);
   animation: slideUp var(--t) var(--ease);
+  overflow: hidden;
 }
 
 @keyframes slideUp {
@@ -1369,6 +1373,9 @@ body {
 
 .modal-body {
   padding: 1.5rem;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .modal-footer {

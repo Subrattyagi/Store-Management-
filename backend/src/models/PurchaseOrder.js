@@ -33,6 +33,13 @@ const purchaseOrderSchema = new mongoose.Schema(
             default: 0,
             min: [0, 'Received quantity cannot be negative'],
         },
+        brandBreakdown: [
+            {
+                brand: { type: String, trim: true },
+                quantity: { type: Number, min: 1 },
+                receivedQuantity: { type: Number, default: 0 }
+            }
+        ],
 
         // Vendor & cost
         vendor: { type: String, trim: true },

@@ -11,5 +11,4 @@ router.get('/:id', authorize('manager', 'director', 'store_manager'), userContro
 router.patch('/:id/role', authorize('director'), userController.updateRole);
 router.patch('/:id/status', authorize('manager', 'director'), userController.updateStatus);
 router.delete('/:id', authorize('director'), userController.deleteUser);
-
 module.exports = router;

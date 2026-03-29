@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { purchaseOrdersAPI, assetRequestsAPI } from '../../api';
+import { purchaseOrdersAPI, assetRequestsAPI, assetsAPI } from '../../api';
 import StatusBadge from '../../components/StatusBadge';
 import toast from 'react-hot-toast';
 
@@ -31,6 +31,7 @@ function CreatePOModal({ onClose, onSuccess, prefill }) {
         estimatedCost: '',
         notes: '',
         linkedAssetRequest: prefill?._id || '',
+        brandBreakdown: [],
     });
     const [submitting, setSubmitting] = useState(false);
 
@@ -52,6 +53,32 @@ function CreatePOModal({ onClose, onSuccess, prefill }) {
             assetCategory: req?.assetCategory || f.assetCategory,
             assetDescription: req?.assetDescription || f.assetDescription,
         }));
+    };
+
+    const addBrandRow = () => {
+        setForm(f => {
+            const newBreakdown = [...f.brandBreakdown, { brand: '', quantity: 1 }];
+            const newTotal = newBreakdown.reduce((sum, b) => sum + (Number(b.quantity) || 0), 0);
+            return { ...f, brandBreakdown: newBreakdown, quantity: newTotal || 1 };
+        });
+    };
+
+    const removeBrandRow = (idx) => {
+        setForm(f => {
+            const newBreakdown = f.brandBreakdown.filter((_, i) => i !== idx);
+            const newTotal = newBreakdown.length > 0
+                ? newBreakdown.reduce((sum, b) => sum + (Number(b.quantity) || 0), 0)
+                : f.quantity;
+            return { ...f, brandBreakdown: newBreakdown, quantity: newTotal };
+        });
+    };
+
+    const updateBrandRow = (idx, field, val) => {
+        setForm(f => {
+            const newBreakdown = f.brandBreakdown.map((b, i) => i === idx ? { ...b, [field]: val } : b);
+            const newTotal = newBreakdown.reduce((sum, b) => sum + (Number(b.quantity) || 0), 0);
+            return { ...f, brandBreakdown: newBreakdown, quantity: newTotal || f.quantity };
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -77,14 +104,14 @@ function CreatePOModal({ onClose, onSuccess, prefill }) {
     return (
         <div className="glass-modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
             <div className="premium-card" style={{ maxWidth: 560, width: '95vw', padding: 0 }} onClick={e => e.stopPropagation()}>
-                <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)' }}>
+                <div className="modal-header" style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
                     <div>
-                        <h3>New Purchase Order</h3>
+                        <h3 style={{ margin: 0 }}>New Purchase Order</h3>
                         <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: 0 }}>Create a procurement request for an asset not in stock</p>
                     </div>
-                    <button className="modal-close" onClick={onClose}>×</button>
+                    <button className="modal-close" onClick={onClose} style={{ top: '1.25rem', right: '1.25rem' }}>×</button>
                 </div>
-                <div className="modal-body">
+                <div className="modal-body" style={{ maxHeight: 'calc(90vh - 140px)', overflowY: 'auto', padding: '1.25rem 1.5rem' }}>
                     <form id="createPOForm" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
                         {/* Link to existing asset request */}
@@ -109,9 +136,69 @@ function CreatePOModal({ onClose, onSuccess, prefill }) {
                                 <input className="form-input" value={form.assetCategory} onChange={set('assetCategory')} required placeholder="e.g. Laptop, Projector" />
                             </div>
                             <div className="form-group" style={{ marginBottom: 0 }}>
-                                <label className="form-label">Quantity</label>
-                                <input className="form-input" type="number" min={1} value={form.quantity} onChange={set('quantity')} />
+                                <label className="form-label">Total Quantity</label>
+                                <input
+                                    className="form-input"
+                                    type="number"
+                                    min={1}
+                                    value={form.quantity}
+                                    onChange={set('quantity')}
+                                    disabled={form.brandBreakdown.length > 0}
+                                    style={form.brandBreakdown.length > 0 ? { background: 'var(--bg-secondary)', cursor: 'not-allowed' } : {}}
+                                />
+                                {form.brandBreakdown.length > 0 && (
+                                    <div style={{ fontSize: '0.65rem', color: '#6366f1', marginTop: 4, fontWeight: 700 }}>
+                                        Σ CALCULATED FROM BREAKDOWN
+                                    </div>
+                                )}
                             </div>
+                        </div>
+
+                        {/* Brand Breakdown Section */}
+                        <div style={{
+                            background: 'rgba(99,102,241,0.03)', border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-sm)', padding: '1rem'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>
+                                    Brand Breakdown (Optional)
+                                </div>
+                                <button type="button" className="btn btn-ghost btn-sm" onClick={addBrandRow} style={{ color: '#6366f1', fontSize: '0.7rem', padding: '2px 8px' }}>
+                                    + Add Brand
+                                </button>
+                            </div>
+
+                            {form.brandBreakdown.length === 0 ? (
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', padding: '0.5rem', border: '1px dashed var(--border)', borderRadius: 6 }}>
+                                    No specific brands defined. Single batch will be created.
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {form.brandBreakdown.map((row, idx) => (
+                                        <div key={idx} style={{ display: 'flex', gap: '0.5rem' }}>
+                                            <input
+                                                className="form-input"
+                                                value={row.brand}
+                                                onChange={e => updateBrandRow(idx, 'brand', e.target.value)}
+                                                placeholder="Brand (e.g. Samsung)"
+                                                style={{ flex: 2, fontSize: '0.82rem' }}
+                                            />
+                                            <input
+                                                className="form-input"
+                                                type="number"
+                                                min={1}
+                                                value={row.quantity}
+                                                onChange={e => updateBrandRow(idx, 'quantity', Number(e.target.value) || 1)}
+                                                placeholder="Qty"
+                                                style={{ flex: 1, fontSize: '0.82rem' }}
+                                            />
+                                            <button type="button" onClick={() => removeBrandRow(idx)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: '#ef4444', padding: '0 4px' }}>
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         <div className="form-group" style={{ marginBottom: 0 }}>
@@ -136,7 +223,7 @@ function CreatePOModal({ onClose, onSuccess, prefill }) {
                         </div>
                     </form>
                 </div>
-                <div className="modal-footer">
+                <div className="modal-footer" style={{ borderTop: '1px solid var(--border)', padding: '1rem 1.5rem', flexShrink: 0 }}>
                     <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
                     <button type="submit" form="createPOForm" className="btn btn-primary" disabled={submitting}>
                         {submitting ? 'Creating…' : '🛒 Create Purchase Order'}
@@ -298,7 +385,25 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
 
     // ── Received qty & Serials ──
     const [receivedQty, setReceivedQty] = useState(orderedQty);
-    const [serials, setSerials] = useState(() => Array.from({ length: orderedQty }, () => ({ value: '', status: 'idle' })));
+    const [serials, setSerials] = useState(() => {
+        if (po.brandBreakdown && po.brandBreakdown.length > 0) {
+            const rows = [];
+            po.brandBreakdown.forEach(bb => {
+                for (let i = 0; i < bb.quantity; i++) {
+                    rows.push({ value: '', status: 'idle', dbStatus: 'idle', brand: bb.brand });
+                }
+            });
+            // If total breakdown is less than ordered qty (unlikely but safe), fill the rest
+            while (rows.length < orderedQty) {
+                rows.push({ value: '', status: 'idle', dbStatus: 'idle', brand: po.vendor || '' });
+            }
+            return rows.slice(0, orderedQty);
+        }
+        return Array.from({ length: orderedQty }, () => ({
+            value: '', status: 'idle', dbStatus: 'idle',
+            brand: po.assetCategory?.includes(' ') ? po.assetCategory.split(' ')[0] : (po.vendor || '')
+        }));
+    });
     const inputRefs = useRef([]);
 
     // Sync serials array when receivedQty changes
@@ -307,7 +412,8 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
             const current = [...prev];
             if (receivedQty > current.length) {
                 const diff = receivedQty - current.length;
-                return [...current, ...Array.from({ length: diff }, () => ({ value: '', status: 'idle' }))];
+                const lastBrand = current.length > 0 ? current[current.length - 1].brand : (po.vendor || '');
+                return [...current, ...Array.from({ length: diff }, () => ({ value: '', status: 'idle', dbStatus: 'idle', brand: lastBrand }))];
             } else if (receivedQty < current.length) {
                 return current.slice(0, receivedQty);
             }
@@ -315,8 +421,8 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
         });
     }, [receivedQty]);
 
-    // ── Step: 'details' | 'serials' ──
-    const [step, setStep] = useState('details');
+    // ── Step: 'verify' | 'details' | 'serials' ──
+    const [step, setStep] = useState('verify');
     const [submitting, setSubmitting] = useState(false);
     const [pasteOpen, setPasteOpen] = useState(false);
     const [pasteText, setPasteText] = useState('');
@@ -339,10 +445,37 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
 
     const updateSerial = (idx, val) => {
         setSerials(prev => prev.map((s, i) => i === idx
-            ? { value: val, status: getStatus(idx, val) }
+            ? { ...s, value: val, status: getStatus(idx, val), dbStatus: 'idle' }
             : { ...s, status: getStatus(i, s.value) }
         ));
     };
+
+    // Debounced DB serial check
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            const valuesToCheck = serials
+                .filter(s => s.value.trim() && s.status === 'ok' && s.dbStatus === 'idle')
+                .map(s => s.value.trim());
+
+            if (valuesToCheck.length === 0) return;
+
+            try {
+                const res = await assetsAPI.checkSerials(valuesToCheck);
+                const existingMap = res.data.data.existing;
+
+                setSerials(prev => prev.map(s => {
+                    const val = s.value.trim();
+                    if (val && valuesToCheck.includes(val)) {
+                        return { ...s, dbStatus: existingMap[val] ? 'exists' : 'new' };
+                    }
+                    return s;
+                }));
+            } catch (err) {
+                console.error('Failed to check serials:', err);
+            }
+        }, 600);
+        return () => clearTimeout(timer);
+    }, [serials]);
 
     // Auto-advance to next input when Enter or Tab pressed (barcode scanner fires Enter)
     const handleKeyDown = (idx, e) => {
@@ -390,6 +523,7 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                 // Single asset — existing single-asset endpoint
                 await purchaseOrdersAPI.receiveAndAdd(po._id, {
                     ...shared,
+                    brand: serials[0].brand.trim(),
                     serialNumber: serials[0].value.trim(),
                     purchasePrice: shared.purchasePrice ? Number(shared.purchasePrice) : undefined,
                     autoAssign: shared.autoAssign,
@@ -401,16 +535,18 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                 // Bulk — send ALL serial numbers in ONE request to the new bulk endpoint
                 const assetPayloads = serials.map(s => ({
                     ...shared,
+                    brand: s.brand.trim() || shared.brand,
                     serialNumber: s.value.trim(),
                     purchasePrice: shared.purchasePrice ? Number(shared.purchasePrice) : undefined,
                     autoAssign: false,
                 }));
                 const res = await purchaseOrdersAPI.bulkReceive(po._id, assetPayloads);
-                const { created, skipped, skippedSerials } = res.data.data;
-                if (skipped === 0) {
+                const { created, linkedExisting } = res.data.data;
+
+                if (linkedExisting === 0) {
                     toast.success(`✅ All ${created} assets added to inventory!`);
                 } else {
-                    toast(`⚠ ${created} added, ${skipped} skipped (already in DB): ${skippedSerials.join(', ')}`, { duration: 6000 });
+                    toast.success(`✅ ${created + linkedExisting} assets linked! (${created} new, ${linkedExisting} previously existing)`);
                 }
             }
             onSuccess();
@@ -430,10 +566,79 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
         }
     }, [step]);
 
-    // ── Step 1: Shared Details ──
+    // ── Step 0: Verification Panel ──
+    const verifyStep = (
+        <div style={{ padding: '0.5rem 0' }}>
+            <div style={{
+                background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: 12,
+                border: '1px solid var(--border)', marginBottom: '1.5rem'
+            }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                    <div>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>ORDERED QUANTITY</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{orderedQty} Units</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 4 }}>ASSET CATEGORY</div>
+                        <div style={{ fontSize: '1rem', fontWeight: 700 }}>{po.assetCategory}</div>
+                    </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label" style={{ fontWeight: 800, fontSize: '0.9rem' }}>ACTUAL UNITS RECEIVED *</label>
+                    <div style={{ position: 'relative' }}>
+                        <input
+                            className="form-input"
+                            type="number"
+                            min={1}
+                            max={orderedQty}
+                            value={receivedQty}
+                            onChange={e => setReceivedQty(Number(e.target.value) || 1)}
+                            required
+                            style={{ fontSize: '1.1rem', fontWeight: 700, padding: '0.75rem 1rem' }}
+                        />
+                        <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.8rem' }}>units</span>
+                    </div>
+                </div>
+            </div>
+
+            {receivedQty < orderedQty && (
+                <div style={{
+                    padding: '1rem', background: 'rgba(239,68,68,0.06)', borderRadius: 10,
+                    border: '1px solid rgba(239,68,68,0.2)', display: 'flex', gap: '0.75rem'
+                }}>
+                    <span style={{ fontSize: '1.25rem' }}>⚠</span>
+                    <div>
+                        <div style={{ fontWeight: 700, color: '#b91c1c', fontSize: '0.85rem' }}>Quantity Discrepancy Detected</div>
+                        <div style={{ fontSize: '0.8rem', color: '#991b1b', marginTop: 2 }}>
+                            You are adding <strong>{receivedQty}</strong> units instead of the ordered <strong>{orderedQty}</strong>.
+                            The missing <strong>{orderedQty - receivedQty}</strong> units will be marked as missing in the procurement record.
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {receivedQty === orderedQty && (
+                <div style={{
+                    padding: '1rem', background: 'rgba(16,185,129,0.06)', borderRadius: 10,
+                    border: '1px solid rgba(16,185,129,0.2)', display: 'flex', gap: '0.75rem'
+                }}>
+                    <span style={{ fontSize: '1.25rem' }}>✅</span>
+                    <div>
+                        <div style={{ fontWeight: 700, color: '#059669', fontSize: '0.85rem' }}>All Units Received</div>
+                        <div style={{ fontSize: '0.8rem', color: '#065f46', marginTop: 2 }}>
+                            The received quantity matches the purchase order.
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+    // ── Step 1: Details Panel ──
     const detailsForm = (
         <form id="addInventoryForm" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
-            onSubmit={e => { e.preventDefault(); qty > 1 ? setStep('serials') : null; }}>
+            onSubmit={e => { e.preventDefault(); receivedQty > 1 ? setStep('serials') : null; }}>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
@@ -471,30 +676,21 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                     <input className="form-input" value={shared.vendor} onChange={setS('vendor')} placeholder="Vendor name" />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Purchase Price (₹) per unit</label>
-                    <input className="form-input" type="number" min={0} value={shared.purchasePrice} onChange={setS('purchasePrice')} placeholder="0" />
+                    <label className="form-label">Storage Location</label>
+                    <input className="form-input" value={shared.location} onChange={setS('location')} placeholder="e.g. Store Room A" />
                 </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Quantity Received *</label>
-                    <input
-                        className="form-input"
-                        type="number"
-                        min={1}
-                        max={orderedQty}
-                        value={receivedQty}
-                        onChange={e => setReceivedQty(Number(e.target.value) || 1)}
-                        required
-                    />
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                        Ordered: {orderedQty} units
-                    </div>
+                    <label className="form-label">Purchase Price (₹) per unit</label>
+                    <input className="form-input" type="number" min={0} value={shared.purchasePrice} onChange={setS('purchasePrice')} placeholder="0" />
                 </div>
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label className="form-label">Storage Location</label>
-                    <input className="form-input" value={shared.location} onChange={setS('location')} placeholder="e.g. Store Room A, Shelf 3" />
+                    <label className="form-label">Status</label>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#10b981', padding: '8px 0' }}>
+                        ✓ Available (Ready for issue)
+                    </div>
                 </div>
             </div>
 
@@ -638,15 +834,30 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                 </div>
             )}
 
+            {/* Table Header */}
+            <div style={{
+                display: 'flex', gap: '0.6rem', padding: '0 0.5rem',
+                fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)',
+                textTransform: 'uppercase', letterSpacing: '0.05em'
+            }}>
+                <div style={{ width: 26 }}>#</div>
+                <div style={{ flex: 1.5 }}>Serial Number</div>
+                <div style={{ flex: 1 }}>Brand / Manufacturer</div>
+                <div style={{ width: 20 }}></div>
+            </div>
+
             {/* Serial input rows */}
             <div style={{
-                display: 'flex', flexDirection: 'column', gap: '0.4rem',
-                maxHeight: 320, overflowY: 'auto',
+                display: 'flex', flexDirection: 'column', gap: '0.6rem',
+                maxHeight: 350, overflowY: 'auto',
                 paddingRight: 4,
             }}>
                 {serials.map((s, idx) => {
                     const isDupe = s.status === 'duplicate';
-                    const isOk = s.status === 'ok';
+                    const exists = s.dbStatus === 'exists';
+                    const isNew = s.dbStatus === 'new';
+                    const isOk = s.status === 'ok' && (isNew || exists);
+
                     return (
                         <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                             {/* Row number badge */}
@@ -654,41 +865,69 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                                 width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 fontSize: '0.65rem', fontWeight: 800,
-                                background: isOk ? 'rgba(5,150,105,0.1)' : isDupe ? 'rgba(245,158,11,0.12)' : 'var(--bg-secondary)',
-                                color: isOk ? '#059669' : isDupe ? '#d97706' : 'var(--text-muted)',
-                                border: `1px solid ${isOk ? 'rgba(5,150,105,0.3)' : isDupe ? 'rgba(245,158,11,0.3)' : 'var(--border)'}`,
+                                background: exists ? 'rgba(99,102,241,0.1)' : isOk ? 'rgba(5,150,105,0.1)' : isDupe ? 'rgba(245,158,11,0.12)' : 'var(--bg-secondary)',
+                                color: exists ? '#6366f1' : isOk ? '#059669' : isDupe ? '#d97706' : 'var(--text-muted)',
+                                border: `1px solid ${exists ? 'rgba(99,102,241,0.3)' : isOk ? 'rgba(5,150,105,0.3)' : isDupe ? 'rgba(245,158,11,0.3)' : 'var(--border)'}`,
                                 transition: 'all 0.15s',
                             }}>
-                                {isOk ? '✓' : idx + 1}
+                                {isOk || exists ? '✓' : idx + 1}
                             </div>
 
                             {/* Serial input */}
-                            <input
-                                ref={el => inputRefs.current[idx] = el}
-                                className="form-input"
-                                id={`serial-input-${idx}`}
-                                value={s.value}
-                                onChange={e => updateSerial(idx, e.target.value)}
-                                onKeyDown={e => handleKeyDown(idx, e)}
-                                onBlur={() => handleBlur(idx)}
-                                placeholder={`Unit ${idx + 1} serial number`}
-                                autoComplete="off"
-                                spellCheck={false}
-                                style={{
-                                    flex: 1, fontFamily: 'monospace', letterSpacing: '0.05em',
-                                    fontSize: '0.875rem',
-                                    borderColor: isDupe ? '#f59e0b' : isOk ? '#10b981' : undefined,
-                                    boxShadow: isDupe
-                                        ? '0 0 0 3px rgba(245,158,11,0.15)'
-                                        : isOk ? '0 0 0 3px rgba(16,185,129,0.12)'
-                                            : undefined,
-                                    transition: 'border-color 0.15s, box-shadow 0.15s',
-                                }}
-                            />
+                            <div style={{ flex: 1.5, position: 'relative' }}>
+                                <input
+                                    ref={el => inputRefs.current[idx] = el}
+                                    className="form-input"
+                                    id={`serial-input-${idx}`}
+                                    value={s.value}
+                                    onChange={e => updateSerial(idx, e.target.value)}
+                                    onKeyDown={e => handleKeyDown(idx, e)}
+                                    onBlur={() => handleBlur(idx)}
+                                    placeholder="Serial Number"
+                                    autoComplete="off"
+                                    spellCheck={false}
+                                    style={{
+                                        width: '100%', fontFamily: 'monospace', letterSpacing: '0.05em',
+                                        fontSize: '0.82rem', padding: '0.5rem 0.6rem',
+                                        borderColor: isDupe ? '#f59e0b' : exists ? '#c7d2fe' : isOk ? '#10b981' : undefined,
+                                        boxShadow: isDupe
+                                            ? '0 0 0 3px rgba(245,158,11,0.15)'
+                                            : exists ? '0 0 0 3px rgba(99,102,241,0.1)'
+                                                : isOk ? '0 0 0 3px rgba(16,185,129,0.12)'
+                                                    : undefined,
+                                        transition: 'all 0.15s',
+                                    }}
+                                />
+                                {exists && (
+                                    <span style={{
+                                        position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)',
+                                        fontSize: '0.55rem', fontWeight: 800, color: '#4f46e5',
+                                        background: '#e0e7ff', padding: '1px 4px', borderRadius: 3,
+                                        pointerEvents: 'none', border: '1px solid #c7d2fe'
+                                    }}>
+                                        EXISTS
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Brand input */}
+                            <div style={{ flex: 1 }}>
+                                <input
+                                    className="form-input"
+                                    value={s.brand}
+                                    onChange={e => setSerials(prev => prev.map((curr, i) => i === idx ? { ...curr, brand: e.target.value } : curr))}
+                                    placeholder="e.g. Samsung"
+                                    style={{
+                                        width: '100%', fontSize: '0.82rem',
+                                        padding: '0.5rem 0.6rem', background: 'var(--bg-secondary)'
+                                    }}
+                                />
+                            </div>
 
                             {/* Status indicator */}
                             <div style={{ width: 20, textAlign: 'center', fontSize: '0.8rem', flexShrink: 0 }}>
                                 {isOk && <span style={{ color: '#10b981' }}>✓</span>}
+                                {exists && <span style={{ color: '#6366f1' }}>✓</span>}
                                 {isDupe && <span style={{ color: '#f59e0b' }} title="Duplicate serial">⚠</span>}
                             </div>
                         </div>
@@ -718,24 +957,23 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                     <div>
                         <h3>Add to Inventory</h3>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
-                            {receivedQty > 1 && (
-                                <>
-                                    {/* Step breadcrumb */}
-                                    <span style={{
-                                        fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px',
-                                        borderRadius: 999,
-                                        background: step === 'details' ? '#6366f1' : 'var(--bg-secondary)',
-                                        color: step === 'details' ? '#fff' : 'var(--text-muted)',
-                                    }}>1 Details</span>
-                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>→</span>
-                                    <span style={{
-                                        fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px',
-                                        borderRadius: 999,
-                                        background: step === 'serials' ? '#6366f1' : 'var(--bg-secondary)',
-                                        color: step === 'serials' ? '#fff' : 'var(--text-muted)',
-                                    }}>2 Serial Numbers ({receivedQty} units)</span>
-                                </>
-                            )}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span style={{
+                                    fontSize: '0.62rem', fontWeight: 800, padding: '2px 8px', borderRadius: 4,
+                                    background: step === 'verify' ? '#2b6860' : 'var(--bg-secondary)',
+                                    color: step === 'verify' ? '#fff' : 'var(--text-muted)',
+                                }}>1 VERIFY</span>
+                                <span style={{
+                                    fontSize: '0.62rem', fontWeight: 800, padding: '2px 8px', borderRadius: 4,
+                                    background: step === 'details' ? '#2b6860' : 'var(--bg-secondary)',
+                                    color: step === 'details' ? '#fff' : 'var(--text-muted)',
+                                }}>2 DETAILS</span>
+                                <span style={{
+                                    fontSize: '0.62rem', fontWeight: 800, padding: '2px 8px', borderRadius: 4,
+                                    background: step === 'serials' ? '#2b6860' : 'var(--bg-secondary)',
+                                    color: step === 'serials' ? '#fff' : 'var(--text-muted)',
+                                }}>3 SERIALS</span>
+                            </div>
                             {receivedQty === 1 && (
                                 <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>
                                     {po.assetCategory} · {po.vendor || 'No vendor'}
@@ -747,54 +985,40 @@ function AddToInventoryModal({ po, onClose, onSuccess }) {
                 </div>
 
                 {/* Body */}
-                <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-                    {step === 'details' ? detailsForm : serialPanel}
+                <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto', padding: '1.25rem 1.5rem' }}>
+                    {step === 'verify' && verifyStep}
+                    {step === 'details' && detailsForm}
+                    {step === 'serials' && serialPanel}
                 </div>
 
                 {/* Footer */}
-                <div className="modal-footer">
-                    {step === 'serials' && receivedQty > 1 ? (
-                        <>
-                            <button type="button" className="btn btn-ghost" onClick={() => setStep('details')}>
-                                ← Back
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-success"
-                                disabled={submitting || !canSubmit}
-                                onClick={handleSubmit}
-                                title={hasDuplicates ? 'Fix duplicate serials first' : !allFilled ? `${receivedQty - filled} serial(s) still empty` : ''}
-                            >
-                                {submitting
-                                    ? `Adding ${receivedQty} Assets…`
-                                    : `📦 Add ${receivedQty} Assets to Inventory`}
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-                            {receivedQty > 1 ? (
-                                <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    disabled={!shared.name || !shared.category}
-                                    onClick={() => setStep('serials')}
-                                >
-                                    Next: Enter Serials →
-                                </button>
-                            ) : (
-                                <button
-                                    type="button"
-                                    className="btn btn-success"
-                                    disabled={submitting || !shared.name || !shared.category || !serials[0].value.trim()}
-                                    onClick={handleSubmit}
-                                >
-                                    {submitting ? 'Adding…' : '📦 Add to Inventory'}
-                                </button>
-                            )}
-                        </>
-                    )}
-                </div>
+                {step === 'verify' ? (
+                    <>
+                        <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
+                        <button type="button" className="btn btn-primary" onClick={() => setStep('details')}>
+                            Confirm Quantity & Continue →
+                        </button>
+                    </>
+                ) : step === 'details' ? (
+                    <>
+                        <button type="button" className="btn btn-ghost" onClick={() => setStep('verify')}>← Back</button>
+                        <button type="button" className="btn btn-primary" disabled={!shared.name || !shared.category} onClick={() => setStep('serials')}>
+                            Next: Asset Details →
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <button type="button" className="btn btn-ghost" onClick={() => setStep('details')}>← Back</button>
+                        <button
+                            type="button"
+                            className="btn btn-success"
+                            disabled={submitting || !canSubmit}
+                            onClick={handleSubmit}
+                        >
+                            {submitting ? `Adding ${receivedQty} Units…` : `📦 Finalize & Add to Inventory`}
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -1087,10 +1311,24 @@ export default function PurchaseManagement() {
                                             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                 {po.assetDescription}
                                             </div>
-                                            {po.quantity > 1 && (
-                                                <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6366f1', background: '#6366f115', padding: '1px 6px', borderRadius: 999 }}>
-                                                    ×{po.quantity}
-                                                </span>
+                                            {po.brandBreakdown && po.brandBreakdown.length > 0 ? (
+                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: 4 }}>
+                                                    {po.brandBreakdown.map((b, i) => (
+                                                        <span key={i} style={{
+                                                            fontSize: '0.62rem', fontWeight: 700, color: '#6366f1',
+                                                            background: '#6366f110', padding: '1px 6px', borderRadius: 4,
+                                                            border: '1px solid #6366f120'
+                                                        }}>
+                                                            {b.brand || 'No Brand'}: {b.receivedQuantity}/{b.quantity}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                po.quantity > 1 && (
+                                                    <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6366f1', background: '#6366f115', padding: '1px 6px', borderRadius: 999 }}>
+                                                        ×{po.quantity}
+                                                    </span>
+                                                )
                                             )}
                                             {po.estimatedCost && (
                                                 <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 2 }}>
@@ -1126,8 +1364,16 @@ export default function PurchaseManagement() {
                                                 {meta?.icon} {meta?.label}
                                             </span>
                                             <div style={{ marginTop: 6 }}>
-                                                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: 2 }}>
-                                                    Received: <strong>{po.receivedQuantity || 0}</strong> / {po.quantity}
+                                                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: 2, display: 'flex', alignItems: 'center' }}>
+                                                    Received: <strong style={{ marginLeft: 4 }}>{po.receivedQuantity || 0}</strong> / {po.quantity}
+                                                    {po.purchaseStatus === 'received' && (po.receivedQuantity || 0) < po.quantity && (
+                                                        <span style={{
+                                                            marginLeft: 8, background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444',
+                                                            padding: '1px 6px', borderRadius: 4, fontWeight: 700, fontSize: '0.6rem'
+                                                        }}>
+                                                            {po.quantity - (po.receivedQuantity || 0)} MISSING
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 {/* Progress Bar */}
                                                 <div style={{ width: '100%', height: 4, background: 'var(--border)', borderRadius: 2, overflow: 'hidden' }}>
@@ -1195,8 +1441,8 @@ export default function PurchaseManagement() {
                                                     </button>
                                                 )}
 
-                                                {/* Add to inventory (only if received + not yet linked) */}
-                                                {po.purchaseStatus === 'received' && !hasLinkedAsset && (
+                                                {/* Add to inventory (only if received + none added yet) */}
+                                                {po.purchaseStatus === 'received' && !hasLinkedAsset && !partiallyAdded && (
                                                     <button
                                                         className="btn btn-primary btn-sm"
                                                         style={{ fontWeight: 600 }}
@@ -1206,10 +1452,24 @@ export default function PurchaseManagement() {
                                                     </button>
                                                 )}
 
-                                                {/* Asset already added */}
+                                                {/* Partial bulk add: show progress + allow re-add */}
+                                                {po.purchaseStatus === 'received' && partiallyAdded && (
+                                                    <button
+                                                        className="btn btn-primary btn-sm"
+                                                        style={{ fontWeight: 600 }}
+                                                        onClick={() => setAddInventoryModal(po)}
+                                                        title={`${po.receivedQuantity} of ${po.quantity} added — click to add more`}
+                                                    >
+                                                        🏷️ Add Remaining
+                                                    </button>
+                                                )}
+
+                                                {/* All assets added to inventory */}
                                                 {hasLinkedAsset && (
                                                     <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 700 }}>
-                                                        ✓ {po.linkedAsset?.name}
+                                                        {isBulk
+                                                            ? `✓ ${po.receivedQuantity} asset${po.receivedQuantity !== 1 ? 's' : ''} in inventory`
+                                                            : `✓ ${po.linkedAsset?.name || 'Asset in inventory'}`}
                                                     </span>
                                                 )}
                                             </div>

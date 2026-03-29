@@ -7,6 +7,21 @@ const { handleValidationErrors } = require('../middleware/validate');
 const { createAuditLog } = require('../utils/auditLogger');
 const { validateTransition } = require('../utils/stateMachine');
 
+// @desc   Check which serial numbers already exist in the DB
+// @route  POST /api/assets/check-serials
+// @access Private (store_manager)
+exports.checkSerials = asyncHandler(async (req, res, next) => {
+    const { serials } = req.body;
+    if (!Array.isArray(serials) || serials.length === 0) {
+        return next(new AppError('serials array is required', 400));
+    }
+    const trimmed = serials.map(s => String(s).trim()).filter(Boolean);
+    const existing = await Asset.find({ serialNumber: { $in: trimmed } }).select('serialNumber name');
+    const existingMap = {};
+    existing.forEach(a => { existingMap[a.serialNumber] = a.name; });
+    res.status(200).json({ status: 'success', data: { existing: existingMap } });
+});
+
 // @desc   Add new asset
 // @route  POST /api/assets
 // @access Private (store_manager)

@@ -6,6 +6,7 @@ const { authorize } = require('../middleware/rbac');
 
 router.use(protect);
 
+router.post('/check-serials', authorize('store_manager'), assetController.checkSerials);
 router.post('/bulk', authorize('store_manager'), assetController.createAssetsBulk);
 router.post('/migrate-conditions', authorize('store_manager', 'director'), assetController.migrateConditions);
 router.post('/', authorize('store_manager'), assetController.createAsset);

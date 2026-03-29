@@ -50,6 +50,7 @@ export const assetsAPI = {
     getOne: (id) => api.get(`/assets/${id}`),
     create: (data) => api.post('/assets', data),
     createBulk: (data) => api.post('/assets/bulk', data),
+    checkSerials: (serials) => api.post('/assets/check-serials', { serials }),
     update: (id, data) => api.patch(`/assets/${id}`, data),
     updateStatus: (id, data) => api.patch(`/assets/${id}/status`, data),
     updateCondition: (id, data) => api.patch(`/assets/${id}/condition`, data),

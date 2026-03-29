@@ -548,6 +548,7 @@ function AssetDetailModal({ asset, assignment, onClose, onStatusUpdate, onCondit
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', fontSize: '0.84rem' }}>
                                     {[
                                         ['Category', asset.category],
+                                        ['Brand', asset.brand || '—'],
                                         ['Asset Type', asset.assetType || 'movable'],
                                         ['Location', asset.location || '—'],
                                         ['Vendor', asset.vendor || '—'],
@@ -1146,17 +1147,19 @@ export default function Inventory() {
                 ) : (
                     <table className="data-table" style={{ width: '100%', tableLayout: 'fixed', minWidth: 0 }}>
                         <colgroup>
-                            <col style={{ width: '24%' }} />{/* Asset */}
-                            <col style={{ width: '11%' }} />{/* Category */}
-                            <col style={{ width: '13%' }} />{/* Serial No. */}
-                            <col style={{ width: '20%' }} />{/* Issued To */}
-                            <col style={{ width: '12%' }} />{/* Condition */}
-                            <col style={{ width: '12%' }} />{/* Status */}
-                            <col style={{ width: '8%' }} /> {/* Actions */}
+                            <col style={{ width: '22%' }} />{/* Asset */}
+                            <col style={{ width: '12%' }} />{/* Brand */}
+                            <col style={{ width: '10%' }} />{/* Category */}
+                            <col style={{ width: '11%' }} />{/* Serial No. */}
+                            <col style={{ width: '18%' }} />{/* Issued To */}
+                            <col style={{ width: '10%' }} />{/* Condition */}
+                            <col style={{ width: '10%' }} />{/* Status */}
+                            <col style={{ width: '7%' }} /> {/* Actions */}
                         </colgroup>
                         <thead>
                             <tr style={{ background: '#f8fafc' }}>
                                 <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8edf3' }}>Asset</th>
+                                <th style={{ padding: '12px 12px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8edf3' }}>Brand</th>
                                 <th style={{ padding: '12px 12px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8edf3' }}>Category</th>
                                 <th style={{ padding: '12px 12px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8edf3' }}>Serial No.</th>
                                 <th style={{ padding: '12px 12px', textAlign: 'left', fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #e8edf3' }}>Issued To</th>
@@ -1167,7 +1170,7 @@ export default function Inventory() {
                         </thead>
                         <tbody>
                             {filtered.length === 0 ? (
-                                <tr><td colSpan="7">
+                                <tr><td colSpan="8">
                                     <div className="empty-state">
                                         <div className="empty-icon">📦</div>
                                         <h3>No assets found</h3>
@@ -1198,6 +1201,11 @@ export default function Inventory() {
                                                     {asset.vendor && <div style={{ fontSize: '0.71rem', color: '#94a3b8', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{asset.vendor}</div>}
                                                 </div>
                                             </div>
+                                        </td>
+
+                                        {/* Brand */}
+                                        <td style={{ padding: '12px 12px', fontSize: '0.82rem', color: '#64748b', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {asset.brand || <span style={{ color: '#cbd5e1' }}>—</span>}
                                         </td>
 
                                         {/* Category */}
