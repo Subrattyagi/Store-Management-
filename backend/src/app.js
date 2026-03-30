@@ -16,6 +16,7 @@ const notificationRoutes = require('./routes/notificationRoutes');
 const purchaseOrderRoutes = require('./routes/purchaseOrderRoutes');
 const maintenanceRoutes = require('./routes/maintenanceRoutes');
 const issueRoutes = require('./routes/issueRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/purchase-orders', purchaseOrderRoutes);
 app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/issues', issueRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Catch-all for unregistered routes
 app.all(/(.*)/, (req, res, next) => {

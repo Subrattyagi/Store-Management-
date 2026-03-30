@@ -17,12 +17,14 @@ const sendTokenResponse = (user, statusCode, res) => {
             user: {
                 _id: user._id,
                 name: user.name,
+                fullName: user.fullName,
                 email: user.email,
                 role: user.role,
                 department: user.department,
                 phone: user.phone,
                 profilePicture: user.profilePicture,
                 status: user.status,
+                isTempPassword: user.isTempPassword || false,
             },
         },
     });
@@ -117,4 +119,38 @@ exports.updateProfile = asyncHandler(async (req, res) => {
     });
 
     res.status(200).json({ status: 'success', data: { user } });
+});
+// @desc   Reset password (for temp password users)
+// @route  PUT /api/auth/reset-password
+// @access Private
+exports.resetPassword = asyncHandler(async (req, res, next) => {
+    const { newPassword, confirmPassword } = req.body;
+
+    if (!newPassword || !confirmPassword) {
+        return next(new AppError('Please provide new password and confirmation', 400));
+    }
+
+    if (newPassword !== confirmPassword) {
+        return next(new AppError('Passwords do not match', 400));
+    }
+
+    if (newPassword.length < 6) {
+        return next(new AppError('Password must be at least 6 characters', 400));
+    }
+
+    const user = await User.findById(req.user._id).select('+password');
+    if (!user) {
+        return next(new AppError('User not found', 404));
+    }
+
+    user.password = newPassword;
+    user.isTempPassword = false;
+    await user.save();
+
+    await createAuditLog({
+        action: `User reset password: ${user.name}`,
+        performedBy: user._id,
+    });
+
+    sendTokenResponse(user, 200, res);
 });

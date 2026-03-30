@@ -5,6 +5,7 @@ const User = require('../models/User');
 
 /**
  * Middleware: Verify JWT and attach req.user
+ * Handles both regular users (DB lookup) and admin tokens (env-based, no DB)
  */
 const protect = asyncHandler(async (req, res, next) => {
     let token;
@@ -22,6 +23,12 @@ const protect = asyncHandler(async (req, res, next) => {
         decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
         return next(new AppError('Invalid or expired token. Please log in again.', 401));
+    }
+
+    // Admin tokens are not DB-stored — short circuit
+    if (decoded.isAdminToken && decoded.role === 'admin') {
+        req.user = { role: 'admin', email: decoded.email, name: 'Admin', isAdminToken: true };
+        return next();
     }
 
     const currentUser = await User.findOne({ _id: decoded.id, isDeleted: { $ne: true } }).select('+password');

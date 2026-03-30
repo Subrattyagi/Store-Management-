@@ -12,6 +12,7 @@ import EmployeeLayout from './components/EmployeeLayout';
 
 // Pages
 import Login from './pages/auth/Login';
+import ResetPassword from './pages/auth/ResetPassword';
 import Profile from './pages/common/Profile';
 
 // Employee
@@ -81,6 +82,7 @@ export default function App() {
           />
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Employee Routes with Custom Mobile Layout */}
             <Route element={<ProtectedRoute><RoleRoute roles={['employee']}><EmployeeLayout /></RoleRoute></ProtectedRoute>}>

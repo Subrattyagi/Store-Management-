@@ -25,7 +25,12 @@ export default function Login() {
         setIsLoading(true);
         try {
             const user = await login(email, password);
-            navigate(ROLE_DASHBOARDS_MAP[user.role] || '/');
+            // Redirect temp password users to reset page first
+            if (user.isTempPassword) {
+                navigate('/reset-password');
+            } else {
+                navigate(ROLE_DASHBOARDS_MAP[user.role] || '/');
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed. Please try again.');
         } finally {

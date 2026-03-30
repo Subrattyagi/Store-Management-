@@ -8,6 +8,10 @@ const userSchema = new mongoose.Schema(
             required: [true, 'Name is required'],
             trim: true,
         },
+        fullName: {
+            type: String,
+            trim: true,
+        },
         email: {
             type: String,
             required: [true, 'Email is required'],
@@ -23,8 +27,12 @@ const userSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['employee', 'store_manager', 'manager', 'director'],
+            enum: ['employee', 'store_manager', 'manager', 'director', 'admin'],
             default: 'employee',
+        },
+        isTempPassword: {
+            type: Boolean,
+            default: false,
         },
         department: {
             type: String,
