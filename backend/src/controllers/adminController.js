@@ -205,6 +205,41 @@ exports.deleteManager = asyncHandler(async (req, res, next) => {
     });
 });
 
+// ─── Update Manager Permissions ───────────────────────────────────────────────
+// @desc   Update module-level permissions for a manager
+// @route  PATCH /api/admin/managers/:id/permissions
+// @access Private (admin only)
+exports.updateManagerPermissions = asyncHandler(async (req, res, next) => {
+    const { permissions } = req.body;
+
+    if (!Array.isArray(permissions)) {
+        return next(new AppError('Permissions must be an array', 400));
+    }
+
+    const VALID_PERMISSIONS = ['dashboard', 'employees', 'asset_requests', 'allocations', 'exit_clearance'];
+    const invalid = permissions.filter(p => !VALID_PERMISSIONS.includes(p));
+    if (invalid.length > 0) {
+        return next(new AppError(`Invalid permissions: ${invalid.join(', ')}`, 400));
+    }
+
+    const manager = await User.findOneAndUpdate(
+        { _id: req.params.id, role: 'manager' },
+        { permissions },
+        { new: true, runValidators: true }
+    ).select('fullName name email role permissions status');
+
+    if (!manager) {
+        return next(new AppError('Manager not found', 404));
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: `Permissions updated for "${manager.fullName || manager.name}".`,
+        data: { manager },
+    });
+});
+
+
 // ─── Create Store Manager ─────────────────────────────────────────────────────
 // @desc   Create a new store manager and send welcome email
 // @route  POST /api/admin/store-managers

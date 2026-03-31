@@ -16,6 +16,7 @@ router.delete('/employees/:id', protect, authorize('admin'), adminController.del
 // Managers
 router.post('/managers', protect, authorize('admin'), adminController.createManager);
 router.get('/managers', protect, authorize('admin'), adminController.getManagers);
+router.patch('/managers/:id/permissions', protect, authorize('admin'), adminController.updateManagerPermissions);
 router.delete('/managers/:id', protect, authorize('admin'), adminController.deleteManager);
 
 // Store Managers

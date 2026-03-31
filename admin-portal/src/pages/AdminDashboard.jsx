@@ -7,13 +7,38 @@ import toast from 'react-hot-toast';
 const formatDate = (d) =>
     new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 
-// ─── Manager Permission Options ───────────────────────────────────────────────
+// ─── Manager Permission Options (with module icons) ───────────────────────────
 const MANAGER_PERMISSIONS = [
-    { key: 'dashboard', label: 'Dashboard Access', desc: 'View summary stats & overview' },
-    { key: 'employees', label: 'View Employees', desc: 'Browse team members & profiles' },
-    { key: 'asset_requests', label: 'Manage Asset Requests', desc: 'Approve or reject requests' },
-    { key: 'allocations', label: 'Manage Allocations', desc: 'View & manage asset allocations' },
-    { key: 'exit_clearance', label: 'Exit Clearance', desc: 'Handle employee exit process' },
+    {
+        key: 'dashboard',
+        label: 'Dashboard',
+        desc: 'Summary stats & overview',
+        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></svg>,
+    },
+    {
+        key: 'employees',
+        label: 'Employees',
+        desc: 'Team members & profiles',
+        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
+    },
+    {
+        key: 'asset_requests',
+        label: 'Asset Requests',
+        desc: 'Approve or reject requests',
+        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="2" /><line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" /></svg>,
+    },
+    {
+        key: 'allocations',
+        label: 'Allocations',
+        desc: 'View & manage allocations',
+        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="9 11 12 14 22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg>,
+    },
+    {
+        key: 'exit_clearance',
+        label: 'Exit Clearance',
+        desc: 'Handle employee exit process',
+        icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>,
+    },
 ];
 
 // ─── Shared Icons ─────────────────────────────────────────────────────────────
@@ -30,16 +55,84 @@ const icons = {
     check: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>,
     logout: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>,
     shield: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
+    edit: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>,
+    close: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>,
+    calendar: <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>,
 };
 
-// ─── User Directory Table ─────────────────────────────────────────────────────
+// ─── Premium Manager Card List ────────────────────────────────────────────────
+function ManagerCards({ managers, onDelete, onEditPerms }) {
+    if (managers.length === 0) {
+        return (
+            <div className="mgr-empty">
+                <div className="mgr-empty-icon">{icons.manager}</div>
+                <p className="mgr-empty-text">No managers yet</p>
+                <p className="mgr-empty-sub">Create your first manager using the form.</p>
+            </div>
+        );
+    }
+    return (
+        <div className="mgr-card-list">
+            {managers.map((m) => {
+                const initials = (m.fullName || m.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+                const isActive = !m.isTempPassword;
+                const perms = m.permissions || [];
+                return (
+                    <div key={m._id} className="mgr-card">
+                        {/* Top row: avatar + info + actions */}
+                        <div className="mgr-card-top">
+                            <div className="mgr-card-avatar">{initials}</div>
+                            <div className="mgr-card-info">
+                                <div className="mgr-card-name">{m.fullName || m.name}</div>
+                                <div className="mgr-card-email">{m.email}</div>
+                            </div>
+                            <div className="mgr-card-meta">
+                                <div className={`mgr-status-badge ${isActive ? 'active' : 'pending'}`}>
+                                    <span className="mgr-status-dot" />
+                                    {isActive ? 'Active' : 'Pending'}
+                                </div>
+                                <div className="mgr-card-date">
+                                    {icons.calendar} {formatDate(m.createdAt)}
+                                </div>
+                            </div>
+                            <div className="mgr-card-actions">
+                                <button className="mgr-btn-edit" onClick={() => onEditPerms(m)} title="Edit Permissions">
+                                    {icons.edit}
+                                </button>
+                                <button className="mgr-btn-delete" onClick={() => onDelete(m)} title="Delete Manager">
+                                    {icons.trash}
+                                </button>
+                            </div>
+                        </div>
+                        {/* Permission pills */}
+                        <div className="mgr-card-perms">
+                            {perms.length > 0 ? (
+                                perms.map(p => {
+                                    const meta = MANAGER_PERMISSIONS.find(mp => mp.key === p);
+                                    return (
+                                        <span key={p} className="mgr-perm-chip">
+                                            <span className="mgr-perm-chip-icon">{meta?.icon}</span>
+                                            {meta?.label || p}
+                                        </span>
+                                    );
+                                })
+                            ) : (
+                                <span className="mgr-no-perms">No module access assigned</span>
+                            )}
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+// ─── Generic User Table (employees / store managers) ─────────────────────────
 function UserTable({ users, onDelete, showPermissions = false, emptyLabel }) {
     if (users.length === 0) {
         return (
             <div className="empty-state">
-                <div className="empty-icon">
-                    {icons.manager}
-                </div>
+                <div className="empty-icon">{icons.manager}</div>
                 <p>{emptyLabel}</p>
             </div>
         );
@@ -75,11 +168,7 @@ function UserTable({ users, onDelete, showPermissions = false, emptyLabel }) {
                                         {u.permissions && u.permissions.length > 0
                                             ? u.permissions.map((p) => {
                                                 const found = MANAGER_PERMISSIONS.find(mp => mp.key === p);
-                                                return (
-                                                    <span key={p} className="perm-tag">
-                                                        {found ? found.label : p}
-                                                    </span>
-                                                );
+                                                return <span key={p} className="perm-tag">{found ? found.label : p}</span>;
                                             })
                                             : <span className="perm-none">No permissions</span>
                                         }
@@ -173,13 +262,52 @@ export default function AdminDashboard() {
     const [storeManagers, setStoreManagers] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Manager permissions state
+    // Manager permissions state (create form)
     const [selectedPerms, setSelectedPerms] = useState([]);
+
+    // Edit permissions panel state
+    const [editingManager, setEditingManager] = useState(null); // manager object being edited
+    const [editPerms, setEditPerms] = useState([]);             // current perm selection in panel
+    const [editSaving, setEditSaving] = useState(false);
 
     const togglePerm = (key) => {
         setSelectedPerms((prev) =>
             prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
         );
+    };
+
+    const toggleEditPerm = (key) => {
+        setEditPerms((prev) =>
+            prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+        );
+    };
+
+    const openEditPanel = (manager) => {
+        setEditingManager(manager);
+        setEditPerms(manager.permissions || []);
+    };
+
+    const closeEditPanel = () => {
+        setEditingManager(null);
+        setEditPerms([]);
+    };
+
+    const handleSavePermissions = async () => {
+        if (!editingManager) return;
+        setEditSaving(true);
+        try {
+            const res = await adminAPI.updateManagerPermissions(editingManager._id, editPerms);
+            const updated = res.data.data.manager;
+            setManagers((prev) =>
+                prev.map((m) => m._id === updated._id ? { ...m, permissions: updated.permissions } : m)
+            );
+            toast.success(`Permissions updated for ${editingManager.fullName || editingManager.name}`);
+            closeEditPanel();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to update permissions');
+        } finally {
+            setEditSaving(false);
+        }
     };
 
     const fetchAll = useCallback(async () => {
@@ -430,31 +558,32 @@ export default function AdminDashboard() {
                                     <div className="perm-section-label">
                                         {icons.shield} Module Permissions
                                     </div>
-                                    <div className="permissions-grid">
+                                    <div className="perm-icon-grid">
                                         {MANAGER_PERMISSIONS.map((perm) => {
                                             const isActive = selectedPerms.includes(perm.key);
                                             return (
-                                                <div
+                                                <button
                                                     key={perm.key}
-                                                    className={`perm-row ${isActive ? 'active' : ''}`}
+                                                    type="button"
+                                                    className={`perm-icon-card ${isActive ? 'active' : ''}`}
                                                     onClick={() => togglePerm(perm.key)}
                                                     id={`perm-${perm.key}`}
                                                 >
-                                                    <div className="perm-row-text">
-                                                        <span className="perm-row-label">{perm.label}</span>
-                                                        <span className="perm-row-desc">{perm.desc}</span>
+                                                    <div className="pic-icon">{perm.icon}</div>
+                                                    <div className="pic-body">
+                                                        <div className="pic-label">{perm.label}</div>
+                                                        <div className="pic-desc">{perm.desc}</div>
                                                     </div>
-                                                    <div className="perm-toggle">
-                                                        <div className="perm-toggle-track" />
-                                                        <div className="perm-toggle-thumb" />
+                                                    <div className="pic-check">
+                                                        {isActive && icons.check}
                                                     </div>
-                                                </div>
+                                                </button>
                                             );
                                         })}
                                     </div>
                                     {selectedPerms.length === 0 && (
                                         <div className="perm-warning">
-                                            {icons.info} No permissions selected — this manager will have no module access.
+                                            {icons.info} No permissions selected — manager will have no module access.
                                         </div>
                                     )}
                                 </div>
@@ -477,17 +606,97 @@ export default function AdminDashboard() {
                                 <div className="spinner-lg" />
                                 <span>Loading directory…</span>
                             </div>
+                        ) : activeNav === 'managers' ? (
+                            <ManagerCards
+                                managers={section.users}
+                                onDelete={(u) => handleDelete(u, 'manager')}
+                                onEditPerms={openEditPanel}
+                            />
                         ) : (
                             <UserTable
                                 users={section.users}
                                 onDelete={(u) => handleDelete(u, section.role)}
-                                showPermissions={section.showPermissions}
+                                showPermissions={false}
                                 emptyLabel={section.emptyLabel}
                             />
                         )}
                     </div>
                 </div>
             </main>
+
+            {/* ── Edit Permissions Panel (Slide-in Drawer) ── */}
+            {editingManager && (
+                <>
+                    {/* Backdrop */}
+                    <div className="perm-panel-backdrop" onClick={closeEditPanel} />
+                    {/* Panel */}
+                    <div className="perm-panel">
+                        <div className="perm-panel-header">
+                            <div>
+                                <div className="perm-panel-title">
+                                    {icons.shield} Edit Permissions
+                                </div>
+                                <div className="perm-panel-subtitle">
+                                    {editingManager.fullName || editingManager.name} · {editingManager.email}
+                                </div>
+                            </div>
+                            <button className="perm-panel-close" onClick={closeEditPanel}>
+                                {icons.close}
+                            </button>
+                        </div>
+
+                        <div className="perm-panel-body">
+                            <div className="perm-section-label">
+                                {icons.shield} Module Access
+                            </div>
+                            <div className="perm-icon-grid">
+                                {MANAGER_PERMISSIONS.map((perm) => {
+                                    const isActive = editPerms.includes(perm.key);
+                                    return (
+                                        <button
+                                            key={perm.key}
+                                            type="button"
+                                            className={`perm-icon-card ${isActive ? 'active' : ''}`}
+                                            onClick={() => toggleEditPerm(perm.key)}
+                                        >
+                                            <div className="pic-icon">{perm.icon}</div>
+                                            <div className="pic-body">
+                                                <div className="pic-label">{perm.label}</div>
+                                                <div className="pic-desc">{perm.desc}</div>
+                                            </div>
+                                            <div className="pic-check">
+                                                {isActive && icons.check}
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            {editPerms.length === 0 && (
+                                <div className="perm-warning">
+                                    {icons.info} No permissions selected — manager will have no module access.
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="perm-panel-footer">
+                            <button className="btn-ghost" onClick={closeEditPanel}>
+                                Cancel
+                            </button>
+                            <button
+                                className="btn-gold-sm"
+                                onClick={handleSavePermissions}
+                                disabled={editSaving}
+                            >
+                                {editSaving ? (
+                                    <><span className="spinner" style={{ borderTopColor: '#1a1200', borderColor: 'rgba(26,18,0,0.3)', width: 12, height: 12 }} /> Saving…</>
+                                ) : (
+                                    <>{icons.check} Save Permissions</>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

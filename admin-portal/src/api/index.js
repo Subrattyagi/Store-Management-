@@ -38,6 +38,7 @@ export const adminAPI = {
     // Managers
     createManager: (data) => api.post('/admin/managers', data),
     getManagers: () => api.get('/admin/managers'),
+    updateManagerPermissions: (id, permissions) => api.patch(`/admin/managers/${id}/permissions`, { permissions }),
     deleteManager: (id) => api.delete(`/admin/managers/${id}`),
 
     // Store Managers
