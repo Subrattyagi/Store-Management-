@@ -21,11 +21,11 @@ const NAV_ITEMS = {
         { label: 'Issues', path: '/store-manager/issues', icon: <AlertIcon /> },
     ],
     manager: [
-        { label: 'Dashboard', path: '/manager/dashboard', icon: <DashIcon /> },
-        { label: 'Employees', path: '/manager/employees', icon: <PeopleIcon /> },
-        { label: 'Allocations', path: '/manager/allocations', icon: <AllocIcon /> },
-        { label: 'Asset Requests', path: '/manager/asset-requests', icon: <RequestIcon />, badge: true },
-        { label: 'Exit Clearance', path: '/manager/exit-clearance', icon: <ClearIcon /> },
+        { label: 'Dashboard', path: '/manager/dashboard', icon: <DashIcon />, permKey: 'dashboard' },
+        { label: 'Employees', path: '/manager/employees', icon: <PeopleIcon />, permKey: 'employees' },
+        { label: 'Allocations', path: '/manager/allocations', icon: <AllocIcon />, permKey: 'allocations' },
+        { label: 'Asset Requests', path: '/manager/asset-requests', icon: <RequestIcon />, badge: true, permKey: 'asset_requests' },
+        { label: 'Exit Clearance', path: '/manager/exit-clearance', icon: <ClearIcon />, permKey: 'exit_clearance' },
     ],
     director: [
         { label: 'Reports', path: '/director/reports', icon: <ReportIcon /> },
@@ -72,7 +72,11 @@ export default function Sidebar() {
         navigate('/login');
     };
 
-    const navItems = NAV_ITEMS[user?.role] || [];
+    // For managers: filter nav items by their permissions
+    const allNavItems = NAV_ITEMS[user?.role] || [];
+    const navItems = user?.role === 'manager'
+        ? allNavItems.filter(item => !item.permKey || (user.permissions || []).includes(item.permKey))
+        : allNavItems;
     const initials = user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
     const meta = ROLE_META[user?.role] || { label: user?.role, color: '#6366f1' };
 

@@ -25,4 +25,19 @@ export const RoleRoute = ({ children, roles }) => {
     return children;
 };
 
+// Guards a route by a specific permission key (for managers)
+export const PermissionRoute = ({ children, permKey }) => {
+    const { user, loading } = useAuth();
+    if (loading) return <div className="loading"><div className="spinner" /></div>;
+    if (!user) return <Navigate to="/login" replace />;
+    // Only enforce permission check for managers
+    if (user.role === 'manager' && permKey) {
+        const userPerms = user.permissions || [];
+        if (!userPerms.includes(permKey)) {
+            return <Navigate to={ROLE_DASHBOARDS[user.role] || '/login'} replace />;
+        }
+    }
+    return children;
+};
+
 export const ROLE_DASHBOARDS_MAP = ROLE_DASHBOARDS;

@@ -3,7 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { SidebarProvider, useSidebar } from './context/SidebarContext';
 import { NotificationProvider } from './context/NotificationContext';
-import { ProtectedRoute, RoleRoute, ROLE_DASHBOARDS_MAP } from './routes/ProtectedRoute';
+import { ProtectedRoute, RoleRoute, PermissionRoute, ROLE_DASHBOARDS_MAP } from './routes/ProtectedRoute';
 
 // Layout
 import Sidebar from './components/Sidebar';
@@ -116,11 +116,11 @@ export default function App() {
 
               {/* Manager Routes */}
               <Route path="/manager">
-                <Route path="dashboard" element={<RoleRoute roles={['manager']}><Dashboard /></RoleRoute>} />
-                <Route path="employees" element={<RoleRoute roles={['manager']}><Employees /></RoleRoute>} />
-                <Route path="allocations" element={<RoleRoute roles={['manager']}><Allocations /></RoleRoute>} />
-                <Route path="exit-clearance" element={<RoleRoute roles={['manager']}><ExitClearance /></RoleRoute>} />
-                <Route path="asset-requests" element={<RoleRoute roles={['manager']}><ManagerAssetRequests /></RoleRoute>} />
+                <Route path="dashboard" element={<RoleRoute roles={['manager']}><PermissionRoute permKey="dashboard"><Dashboard /></PermissionRoute></RoleRoute>} />
+                <Route path="employees" element={<RoleRoute roles={['manager']}><PermissionRoute permKey="employees"><Employees /></PermissionRoute></RoleRoute>} />
+                <Route path="allocations" element={<RoleRoute roles={['manager']}><PermissionRoute permKey="allocations"><Allocations /></PermissionRoute></RoleRoute>} />
+                <Route path="exit-clearance" element={<RoleRoute roles={['manager']}><PermissionRoute permKey="exit_clearance"><ExitClearance /></PermissionRoute></RoleRoute>} />
+                <Route path="asset-requests" element={<RoleRoute roles={['manager']}><PermissionRoute permKey="asset_requests"><ManagerAssetRequests /></PermissionRoute></RoleRoute>} />
               </Route>
 
               {/* Director Routes */}

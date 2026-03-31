@@ -1109,3 +1109,163 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   PERMISSIONS — PILL TOGGLE SYSTEM (Premium)
+══════════════════════════════════════════════════════════ */
+.perm-section-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  margin-top: 4px;
+}
+
+.perm-section-label svg {
+  color: var(--gold);
+  opacity: 0.7;
+}
+
+.permissions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Each permission row */
+.perm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 16px;
+  border-radius: var(--radius);
+  background: var(--surface-highest);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--t);
+  user-select: none;
+}
+
+.perm-row:hover {
+  background: var(--surface-bright);
+  border-color: rgba(233, 195, 73, 0.12);
+}
+
+.perm-row.active {
+  background: rgba(233, 195, 73, 0.07);
+  border-color: rgba(233, 195, 73, 0.2);
+}
+
+.perm-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.perm-row-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.perm-row.active .perm-row-label {
+  color: var(--gold-dim);
+}
+
+.perm-row-desc {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Pill toggle switch */
+.perm-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.perm-toggle-track {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: var(--surface-low);
+  border: 1px solid rgba(233, 195, 73, 0.1);
+  transition: all 300ms ease;
+}
+
+.perm-row.active .perm-toggle-track {
+  background: rgba(233, 195, 73, 0.15);
+  border-color: rgba(233, 195, 73, 0.35);
+}
+
+.perm-toggle-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: all 300ms ease;
+}
+
+.perm-row.active .perm-toggle-thumb {
+  left: 19px;
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(233, 195, 73, 0.6), 0 0 16px rgba(233, 195, 73, 0.2);
+}
+
+/* No-permissions warning */
+.perm-warning {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: var(--warning);
+  padding: 10px 14px;
+  background: rgba(245, 158, 11, 0.06);
+  border-radius: var(--radius);
+  border: 1px solid rgba(245, 158, 11, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.5;
+}
+
+/* ─── Permission Tags in directory table ─── */
+.perm-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 280px;
+}
+
+.perm-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: rgba(233, 195, 73, 0.08);
+  border: 1px solid rgba(233, 195, 73, 0.18);
+  color: var(--gold-dim);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.perm-none {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-style: italic;
+}

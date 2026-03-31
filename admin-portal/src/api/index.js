@@ -29,9 +29,21 @@ api.interceptors.response.use(
 
 export const adminAPI = {
     login: (data) => api.post('/admin/login', data),
+
+    // Employees
     createEmployee: (data) => api.post('/admin/employees', data),
     getEmployees: () => api.get('/admin/employees'),
     deleteEmployee: (id) => api.delete(`/admin/employees/${id}`),
+
+    // Managers
+    createManager: (data) => api.post('/admin/managers', data),
+    getManagers: () => api.get('/admin/managers'),
+    deleteManager: (id) => api.delete(`/admin/managers/${id}`),
+
+    // Store Managers
+    createStoreManager: (data) => api.post('/admin/store-managers', data),
+    getStoreManagers: () => api.get('/admin/store-managers'),
+    deleteStoreManager: (id) => api.delete(`/admin/store-managers/${id}`),
 };
 
 export default api;

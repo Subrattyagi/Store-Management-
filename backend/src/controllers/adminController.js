@@ -60,10 +60,9 @@ exports.createEmployee = asyncHandler(async (req, res, next) => {
         return next(new AppError('Full name and email are required', 400));
     }
 
-    // Check for duplicate email
     const existing = await User.findOne({ email: email.toLowerCase() });
     if (existing) {
-        return next(new AppError('An employee with this email already exists', 409));
+        return next(new AppError('A user with this email already exists', 409));
     }
 
     const tempPassword = generateTempPassword();
@@ -77,12 +76,10 @@ exports.createEmployee = asyncHandler(async (req, res, next) => {
         isTempPassword: true,
     });
 
-    // Send welcome email
     try {
         await sendWelcomeEmail(fullName, email, tempPassword);
     } catch (emailErr) {
         console.error('Email sending failed:', emailErr.message);
-        // Don't fail the request if email fails — employee is still created
     }
 
     res.status(201).json({
@@ -103,9 +100,6 @@ exports.createEmployee = asyncHandler(async (req, res, next) => {
 });
 
 // ─── Get Employees ────────────────────────────────────────────────────────────
-// @desc   Get all employees
-// @route  GET /api/admin/employees
-// @access Private (admin only)
 exports.getEmployees = asyncHandler(async (req, res) => {
     const employees = await User.find({ role: 'employee', isDeleted: { $ne: true } })
         .select('fullName name email role isTempPassword status createdAt')
@@ -119,9 +113,6 @@ exports.getEmployees = asyncHandler(async (req, res) => {
 });
 
 // ─── Delete Employee ──────────────────────────────────────────────────────────
-// @desc   Permanently delete an employee (allows re-creating with same email)
-// @route  DELETE /api/admin/employees/:id
-// @access Private (admin only)
 exports.deleteEmployee = asyncHandler(async (req, res, next) => {
     const employee = await User.findOneAndDelete({ _id: req.params.id, role: 'employee' });
 
@@ -135,3 +126,158 @@ exports.deleteEmployee = asyncHandler(async (req, res, next) => {
     });
 });
 
+// ─── Create Manager ───────────────────────────────────────────────────────────
+// @desc   Create a new manager with permissions and send welcome email
+// @route  POST /api/admin/managers
+// @access Private (admin only)
+exports.createManager = asyncHandler(async (req, res, next) => {
+    const { fullName, email, permissions = [] } = req.body;
+
+    if (!fullName || !email) {
+        return next(new AppError('Full name and email are required', 400));
+    }
+
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) {
+        return next(new AppError('A user with this email already exists', 409));
+    }
+
+    const tempPassword = generateTempPassword();
+
+    const manager = await User.create({
+        name: fullName,
+        fullName,
+        email: email.toLowerCase(),
+        password: tempPassword,
+        role: 'manager',
+        permissions,
+        isTempPassword: true,
+    });
+
+    try {
+        await sendWelcomeEmail(fullName, email, tempPassword);
+    } catch (emailErr) {
+        console.error('Email sending failed:', emailErr.message);
+    }
+
+    res.status(201).json({
+        status: 'success',
+        message: 'Manager created successfully. Welcome email sent.',
+        data: {
+            manager: {
+                _id: manager._id,
+                fullName: manager.fullName,
+                name: manager.name,
+                email: manager.email,
+                role: manager.role,
+                permissions: manager.permissions,
+                isTempPassword: manager.isTempPassword,
+                createdAt: manager.createdAt,
+            },
+        },
+    });
+});
+
+// ─── Get Managers ─────────────────────────────────────────────────────────────
+exports.getManagers = asyncHandler(async (req, res) => {
+    const managers = await User.find({ role: 'manager', isDeleted: { $ne: true } })
+        .select('fullName name email role permissions isTempPassword status createdAt')
+        .sort({ createdAt: -1 });
+
+    res.status(200).json({
+        status: 'success',
+        results: managers.length,
+        data: { managers },
+    });
+});
+
+// ─── Delete Manager ───────────────────────────────────────────────────────────
+exports.deleteManager = asyncHandler(async (req, res, next) => {
+    const manager = await User.findOneAndDelete({ _id: req.params.id, role: 'manager' });
+
+    if (!manager) {
+        return next(new AppError('Manager not found', 404));
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: `Manager "${manager.fullName || manager.name}" deleted successfully.`,
+    });
+});
+
+// ─── Create Store Manager ─────────────────────────────────────────────────────
+// @desc   Create a new store manager and send welcome email
+// @route  POST /api/admin/store-managers
+// @access Private (admin only)
+exports.createStoreManager = asyncHandler(async (req, res, next) => {
+    const { fullName, email } = req.body;
+
+    if (!fullName || !email) {
+        return next(new AppError('Full name and email are required', 400));
+    }
+
+    const existing = await User.findOne({ email: email.toLowerCase() });
+    if (existing) {
+        return next(new AppError('A user with this email already exists', 409));
+    }
+
+    const tempPassword = generateTempPassword();
+
+    const storeManager = await User.create({
+        name: fullName,
+        fullName,
+        email: email.toLowerCase(),
+        password: tempPassword,
+        role: 'store_manager',
+        isTempPassword: true,
+    });
+
+    try {
+        await sendWelcomeEmail(fullName, email, tempPassword);
+    } catch (emailErr) {
+        console.error('Email sending failed:', emailErr.message);
+    }
+
+    res.status(201).json({
+        status: 'success',
+        message: 'Store Manager created successfully. Welcome email sent.',
+        data: {
+            storeManager: {
+                _id: storeManager._id,
+                fullName: storeManager.fullName,
+                name: storeManager.name,
+                email: storeManager.email,
+                role: storeManager.role,
+                isTempPassword: storeManager.isTempPassword,
+                createdAt: storeManager.createdAt,
+            },
+        },
+    });
+});
+
+// ─── Get Store Managers ───────────────────────────────────────────────────────
+exports.getStoreManagers = asyncHandler(async (req, res) => {
+    const storeManagers = await User.find({ role: 'store_manager', isDeleted: { $ne: true } })
+        .select('fullName name email role isTempPassword status createdAt')
+        .sort({ createdAt: -1 });
+
+    res.status(200).json({
+        status: 'success',
+        results: storeManagers.length,
+        data: { storeManagers },
+    });
+});
+
+// ─── Delete Store Manager ─────────────────────────────────────────────────────
+exports.deleteStoreManager = asyncHandler(async (req, res, next) => {
+    const storeManager = await User.findOneAndDelete({ _id: req.params.id, role: 'store_manager' });
+
+    if (!storeManager) {
+        return next(new AppError('Store Manager not found', 404));
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: `Store Manager "${storeManager.fullName || storeManager.name}" deleted successfully.`,
+    });
+});

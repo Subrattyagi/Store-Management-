@@ -20,6 +20,7 @@ const sendTokenResponse = (user, statusCode, res) => {
                 fullName: user.fullName,
                 email: user.email,
                 role: user.role,
+                permissions: user.permissions || [],
                 department: user.department,
                 phone: user.phone,
                 profilePicture: user.profilePicture,
