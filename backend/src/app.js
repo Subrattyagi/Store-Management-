@@ -3,6 +3,10 @@ const cors = require('cors');
 const morgan = require('morgan');
 const helmet = require('helmet');
 const errorHandler = require('./middleware/errorHandler');
+const connectDB = require('./config/db');
+
+// Ensure Database is connected for Serverless environments
+connectDB();
 
 // Route imports
 const authRoutes = require('./routes/authRoutes');
