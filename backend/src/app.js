@@ -52,6 +52,11 @@ app.use('/api/maintenance', maintenanceRoutes);
 app.use('/api/issues', issueRoutes);
 app.use('/api/admin', adminRoutes);
 
+// Root route
+app.get('/', (req, res) => {
+    res.status(200).json({ status: 'success', message: 'Bhautiki Store Management API is active' });
+});
+
 // Catch-all for unregistered routes
 app.all(/(.*)/, (req, res, next) => {
     const AppError = require('./utils/AppError');
